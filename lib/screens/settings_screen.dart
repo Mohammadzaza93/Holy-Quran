@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/connectivity_service.dart';
+import '../services/mushaf_service.dart';
 import '../services/question_repository.dart';
 import '../services/quran_service.dart';
 import '../services/storage_service.dart';
@@ -19,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _status;
   double _audioMb = 0;
   double? _progress;
+  bool _onDevice = false;
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final store = StorageService.instance;
     _urlController = TextEditingController(text: store.remoteUrl);
     _reciter = reciters.containsKey(store.reciter) ? store.reciter : StorageService.defaultReciter;
+    _onDevice = store.onDeviceSpeech;
     _refreshSize();
   }
 
@@ -69,6 +72,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _busy = false;
       _progress = null;
       _status = 'تم تجهيز ${result.done} من ${result.total} آية للعمل دون اتصال';
+    });
+  }
+
+  Future<void> _downloadSurahs() async {
+    if (_busy || !await _requireOnline()) return;
+    setState(() {
+      _busy = true;
+      _progress = 0;
+      _status = 'جارٍ تحميل السور (114 سورة)...';
+    });
+    final ok = await MushafService.downloadAll(
+      onProgress: (done, total) {
+        if (mounted) setState(() => _progress = done / total);
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _progress = null;
+      _status = ok == 114
+          ? 'تم حفظ المصحف كاملاً للقراءة دون اتصال'
+          : 'تم حفظ $ok من 114 سورة. أعد المحاولة لإكمال الباقي';
     });
   }
 
@@ -162,6 +187,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           const Divider(height: 28),
+          const _SectionTitle('القراءة والتصحيح الصوتي'),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _onDevice,
+            onChanged: (v) async {
+              await StorageService.instance.setOnDeviceSpeech(v);
+              setState(() => _onDevice = v);
+            },
+            title: const Text('التعرف على الجهاز (دون إنترنت)'),
+            subtitle: const Text(
+              'يعمل إن كانت حزمة اللغة العربية للتعرف الصوتي محمّلة على جهازك، وإلا فأوقفه ليستخدم الإنترنت.',
+            ),
+          ),
+          const SizedBox(height: 6),
+          FilledButton.tonalIcon(
+            onPressed: _busy ? null : _downloadSurahs,
+            icon: const Icon(Icons.menu_book),
+            label: const Text('حفظ نص المصحف كاملاً للقراءة دون اتصال'),
+          ),
+          const Divider(height: 28),
           const _SectionTitle('تحديث الأسئلة من الإنترنت'),
           const Text(
             'يمكنك إضافة أسئلة جديدة من ملف JSON على رابط https (مثلاً من GitHub). تُحفظ الأسئلة محلياً وتعمل بعدها دون اتصال.',
@@ -209,8 +254,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           OutlinedButton.icon(
             onPressed: _busy
                 ? null
-                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء.', () async {
+                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة.', () async {
                       await StorageService.instance.resetProgress();
+                      await StorageService.instance.resetReading();
                       if (mounted) _snack('تم مسح التقدم');
                     }),
             icon: const Icon(Icons.delete_outline),

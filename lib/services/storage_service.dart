@@ -63,6 +63,53 @@ class StorageService {
   String get remoteUrl => _p.getString('remote_url') ?? '';
   Future<void> setRemoteUrl(String v) => _p.setString('remote_url', v);
 
+  // ───────── القراءة والتصحيح الصوتي ─────────
+
+  /// استخدام التعرف الصوتي على الجهاز (قد يعمل دون إنترنت إن توفرت حزمة اللغة العربية)
+  bool get onDeviceSpeech => _p.getBool('speech_on_device') ?? false;
+  Future<void> setOnDeviceSpeech(bool v) => _p.setBool('speech_on_device', v);
+
+  /// أفضل نتيجة (0..1) حققها المستخدم في آية، أو null إن لم يقرأها
+  double? ayahBestScore(int surah, int ayah) => _p.getDouble('read_$surah:$ayah');
+
+  Future<void> saveAyahScore(int surah, int ayah, double score) async {
+    final best = ayahBestScore(surah, ayah);
+    if (best == null || score > best) {
+      await _p.setDouble('read_$surah:$ayah', score);
+    }
+    await _p.setInt('read_attempts', readAttempts + 1);
+  }
+
+  int get readAttempts => _p.getInt('read_attempts') ?? 0;
+
+  /// عدد آيات السورة التي أتقنها المستخدم (نتيجة 90% فأكثر)
+  int masteredAyat(int surah, int ayahCount) {
+    var n = 0;
+    for (var a = 1; a <= ayahCount; a++) {
+      if ((ayahBestScore(surah, a) ?? 0) >= 0.9) n++;
+    }
+    return n;
+  }
+
+  /// آخر موضع قراءة (سورة، آية) لاستئناف القراءة
+  (int, int)? get lastPosition {
+    final raw = _p.getString('last_pos');
+    if (raw == null) return null;
+    final parts = raw.split(':');
+    if (parts.length != 2) return null;
+    final s = int.tryParse(parts[0]);
+    final a = int.tryParse(parts[1]);
+    return (s == null || a == null) ? null : (s, a);
+  }
+
+  Future<void> saveLastPosition(int surah, int ayah) => _p.setString('last_pos', '$surah:$ayah');
+
+  Future<void> resetReading() async {
+    for (final k in _p.getKeys().where((k) => k.startsWith('read_') || k == 'last_pos').toList()) {
+      await _p.remove(k);
+    }
+  }
+
   // ───────── حزمة الأسئلة المحمّلة من الإنترنت ─────────
   List<Question> remoteQuestions() {
     final raw = _p.getString('remote_pack');

@@ -8,6 +8,7 @@ import '../services/question_repository.dart';
 import '../services/storage_service.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
+import 'surah_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -162,6 +163,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     Icon(Icons.emoji_events, size: 40, color: scheme.primary),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // وضع القراءة والتصحيح الصوتي
+            Card(
+              color: scheme.secondaryContainer,
+              child: ListTile(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SurahListScreen()),
+                  );
+                  if (mounted) setState(() {});
+                },
+                leading: CircleAvatar(
+                  backgroundColor: scheme.secondary,
+                  child: Icon(Icons.mic, color: scheme.onSecondary),
+                ),
+                title: const Text('اقرأ القرآن وصحّح تلاوتك',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('اقرأ آية بصوتك ويُظهر لك التطبيق الكلمات التي أخطأت فيها'),
+                trailing: const Icon(Icons.chevron_left),
               ),
             ),
             const SizedBox(height: 12),
