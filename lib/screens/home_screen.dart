@@ -6,6 +6,7 @@ import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
+import 'lessons_list_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
 import 'surah_list_screen.dart';
@@ -163,6 +164,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     Icon(Icons.emoji_events, size: 40, color: scheme.primary),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // سلسلة شروح التجويد
+            Card(
+              color: scheme.tertiaryContainer,
+              child: ListTile(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LessonsListScreen()),
+                  );
+                },
+                leading: CircleAvatar(
+                  backgroundColor: scheme.tertiary,
+                  child: Icon(Icons.menu_book, color: scheme.onTertiary),
+                ),
+                title: const Text(
+                  'سلسلة شروح التجويد',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text(
+                  '13 درسًا متتابعًا مستندة إلى محاضرات الشيخ أيمن رشدي سويد',
+                ),
+                trailing: const Icon(Icons.chevron_left),
               ),
             ),
             const SizedBox(height: 12),
