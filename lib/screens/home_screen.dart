@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: const Text(
-                  '13 درسًا متتابعًا مستندة إلى محاضرات الشيخ أيمن رشدي سويد',
+                  '26 درسًا مفصّلًا مع أمثلة قرآنية مستندة إلى منهج الشيخ أيمن رشدي سويد',
                 ),
                 trailing: const Icon(Icons.chevron_left),
               ),
