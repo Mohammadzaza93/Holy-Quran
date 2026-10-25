@@ -122,7 +122,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // حالة الاتصال
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: Chip(
@@ -141,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 8),
-            // ملخص التقدم
             Card(
               color: scheme.primaryContainer,
               child: Padding(
@@ -167,7 +165,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 12),
-            // سلسلة شروح التجويد
             Card(
               color: scheme.tertiaryContainer,
               child: ListTile(
@@ -185,13 +182,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: const Text(
-                  '26 درسًا مفصّلًا مع أمثلة قرآنية مستندة إلى منهج الشيخ أيمن رشدي سويد',
+                  '36 درسًا أصليًا مع أمثلة قرآنية مستندة إلى منهج الشيخ أيمن رشدي سويد',
                 ),
                 trailing: const Icon(Icons.chevron_left),
               ),
             ),
             const SizedBox(height: 12),
-            // وضع القراءة والتصحيح الصوتي
             Card(
               color: scheme.secondaryContainer,
               child: ListTile(
