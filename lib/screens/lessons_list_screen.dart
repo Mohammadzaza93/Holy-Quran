@@ -2,15 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../data/lessons.dart';
 import '../models/lesson.dart';
+import '../services/storage_service.dart';
 import 'lesson_detail_screen.dart';
 
-/// قائمة سلسلة شروح التجويد المتتابعة.
-class LessonsListScreen extends StatelessWidget {
+/// قائمة سلسلة شروح التجويد المتتابعة مع تتبع التقدم.
+class LessonsListScreen extends StatefulWidget {
   const LessonsListScreen({super.key});
 
   @override
+  State<LessonsListScreen> createState() => _LessonsListScreenState();
+}
+
+class _LessonsListScreenState extends State<LessonsListScreen> {
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final store = StorageService.instance;
+    final total = tajweedLessons.length;
+    final read = store.readLessonsCount;
+    final progress = total == 0 ? 0.0 : read / total;
 
     return Scaffold(
       appBar: AppBar(
@@ -21,21 +31,31 @@ class LessonsListScreen extends StatelessWidget {
         children: [
           Card(
             color: scheme.primaryContainer,
-            child: const Padding(
-              padding: EdgeInsets.all(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'شروح أصلية متتابعة',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'مستندة إلى محاضرات الشيخ أيمن رشدي سويد – كتاب النور المبين في تجويد القرآن الكريم.\n'
-                    'يُفضَّل دراستها بالترتيب، ثم ربطها بأسئلة الاختبار.\n'
-                    'تنبيه: هذه وسيلة مساعدة ولا تغني عن التلقي والمشافهة على مقرئ متقن.',
+                    'يُفضَّل دراستها بالترتيب. تنبيه: هذه وسيلة مساعدة ولا تغني عن التلقي والمشافهة.',
                     style: TextStyle(height: 1.6),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    'تقدمك: $read من $total درسًا',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ],
               ),
@@ -43,7 +63,11 @@ class LessonsListScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           for (final lesson in tajweedLessons)
-            _LessonTile(lesson: lesson),
+            _LessonTile(
+              lesson: lesson,
+              isRead: store.isLessonRead(lesson.id),
+              onOpened: () => setState(() {}),
+            ),
         ],
       ),
     );
@@ -51,9 +75,15 @@ class LessonsListScreen extends StatelessWidget {
 }
 
 class _LessonTile extends StatelessWidget {
-  const _LessonTile({required this.lesson});
+  const _LessonTile({
+    required this.lesson,
+    required this.isRead,
+    required this.onOpened,
+  });
 
   final Lesson lesson;
+  final bool isRead;
+  final VoidCallback onOpened;
 
   @override
   Widget build(BuildContext context) {
@@ -62,27 +92,33 @@ class _LessonTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
-        onTap: () {
-          Navigator.of(context).push(
+        onTap: () async {
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => LessonDetailScreen(lesson: lesson),
             ),
           );
+          onOpened();
         },
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: scheme.primaryContainer,
-          child: Text(
-            '${lesson.order}',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: scheme.primary,
-            ),
-          ),
+          backgroundColor: isRead ? scheme.primary : scheme.primaryContainer,
+          child: isRead
+              ? Icon(Icons.check, color: scheme.onPrimary, size: 22)
+              : Text(
+                  '${lesson.order}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.primary,
+                  ),
+                ),
         ),
         title: Text(
           lesson.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isRead ? scheme.onSurface.withValues(alpha: 0.75) : null,
+          ),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
@@ -91,7 +127,9 @@ class _LessonTile extends StatelessWidget {
             style: const TextStyle(height: 1.4),
           ),
         ),
-        trailing: const Icon(Icons.chevron_left),
+        trailing: isRead
+            ? Icon(Icons.done_all, color: scheme.primary, size: 20)
+            : const Icon(Icons.chevron_left),
       ),
     );
   }
