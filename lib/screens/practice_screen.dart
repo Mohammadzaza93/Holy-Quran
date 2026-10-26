@@ -116,6 +116,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
       if (!mounted) return;
       if (msg == 'error_no_match' || msg == 'error_speech_timeout') {
         _finish(silentNothingHeard: true);
+      } else if (msg.contains('language')) {
+        setState(() {
+          _listening = false;
+          _finished = true;
+          _liveTrack = null;
+          _message = 'لغة التعرف العربية غير متاحة على جهازك. جرّب بالترتيب: '
+              '١) من الإعدادات ← «التعرف على الجهاز» أطفئه ليعمل عبر الإنترنت. '
+              '٢) افتح تطبيق Google ← الإعدادات ← الصوت ← اللغات، وأضف «العربية». '
+              '٣) حدّث تطبيق Google و«خدمات الكلام من Google» من متجر Play.';
+        });
       } else {
         setState(() {
           _listening = false;
