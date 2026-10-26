@@ -98,6 +98,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final scheme = Theme.of(context).colorScheme;
     final all = QuestionRepository.all();
     final wrong = QuestionRepository.wrongOnes();
+    final due = QuestionRepository.dueOnes();
     final totalAns = store.totalAnswered;
     final overall = totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
 
@@ -242,6 +243,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               label: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text('اختبار شامل (20 سؤالاً عشوائياً)'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonalIcon(
+              onPressed: due.isEmpty ? null : () => _start(due, 'مراجعة اليوم', due.length),
+              icon: const Icon(Icons.event_repeat),
+              label: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(due.isEmpty
+                    ? 'مراجعة اليوم: لا شيء مستحق'
+                    : 'مراجعة اليوم - تكرار متباعد (${due.length})'),
               ),
             ),
             const SizedBox(height: 8),

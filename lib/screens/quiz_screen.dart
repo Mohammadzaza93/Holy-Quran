@@ -8,10 +8,13 @@ import '../widgets/ayah_card.dart';
 import 'result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key, required this.title, required this.questions});
+  const QuizScreen({super.key, required this.title, required this.questions, this.onFinished});
 
   final String title;
   final List<Question> questions;
+
+  /// يُستدعى عند إنهاء الاختبار بالنتيجة والعدد (للاختبار القبلي/البعدي مثلاً)
+  final void Function(int score, int total)? onFinished;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -55,6 +58,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _next() {
     if (_isLast) {
+      widget.onFinished?.call(_score, widget.questions.length);
       Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => ResultScreen(
           title: widget.title,

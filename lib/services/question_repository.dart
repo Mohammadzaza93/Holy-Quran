@@ -19,6 +19,12 @@ class QuestionRepository {
     return all().where((q) => ids.contains(q.id)).toList();
   }
 
+  /// الأسئلة المستحقة للمراجعة اليوم بالتكرار المتباعد.
+  static List<Question> dueOnes() {
+    final ids = StorageService.instance.dueIds;
+    return all().where((q) => ids.contains(q.id)).toList();
+  }
+
   static int get remoteCount => StorageService.instance.remoteQuestions().length;
 
   /// يحمّل حزمة أسئلة من رابط JSON ويحفظها محلياً.

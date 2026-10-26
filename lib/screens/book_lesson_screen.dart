@@ -6,10 +6,13 @@ import '../data/book_reference.dart';
 import '../data/book_lessons.dart';
 import '../data/surahs.dart';
 import '../models/book_lesson.dart';
+import '../services/lesson_test.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
 import 'quiz_screen.dart';
+import 'reading_screen.dart';
 import 'reference_screen.dart';
+import '../theme/quran_font.dart';
 
 /// عرض درس واحد، مع ذكر المرجع وأرقام الصفحات، وأزرار للتنقل والاختبار.
 class BookLessonScreen extends StatefulWidget {
@@ -32,6 +35,76 @@ class _BookLessonScreenState extends State<BookLessonScreen> {
   Future<void> _toggleRead() async {
     await StorageService.instance.setBookLessonRead(_lesson.id, !_read);
     if (mounted) setState(() {});
+  }
+
+  Future<void> _startTest({required bool pre}) async {
+    final c = _lesson.category;
+    if (c == null) return;
+    final store = StorageService.instance;
+    final exclude = pre ? <String>{} : store.lessonTestIds(_lesson.id).toSet();
+    final picked = LessonTest.pick(
+        QuestionRepository.byCategory(c), LessonTest.defaultCount, exclude, Random());
+    if (picked.isEmpty) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => QuizScreen(
+          title: '${pre ? 'اختبار قبلي' : 'اختبار بعدي'}: ${_lesson.title}',
+          questions: picked,
+          onFinished: (score, total) => store.saveLessonTest(_lesson.id,
+              pre: pre, score: score, total: total, ids: [for (final q in picked) q.id]),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _testCard(ColorScheme scheme) {
+    final store = StorageService.instance;
+    final pre = store.lessonTest(_lesson.id, pre: true);
+    final post = store.lessonTest(_lesson.id, pre: false);
+    String fmt(LessonTestResult? r) =>
+        r == null ? 'لم يُجرَ' : '${arabicDigits(r.score)} من ${arabicDigits(r.total)}';
+    String? delta;
+    if (pre != null && post != null) {
+      final d = LessonTestResult.improvementPercent(pre, post);
+      delta = d > 0
+          ? 'تحسّنت بمقدار ${arabicDigits(d)}٪ بعد دراسة الدرس'
+          : d == 0
+              ? 'نتيجتك ثابتة؛ أعد قراءة الدرس ثم جرّب مرة أخرى'
+              : 'نتيجتك انخفضت؛ راجع الدرس وأعد الاختبار';
+    }
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer.withAlpha(110),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('قِس تقدّمك في هذا الدرس',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 6),
+          Text('القبلي: ${fmt(pre)}   •   البعدي: ${fmt(post)}', style: const TextStyle(height: 1.7)),
+          if (delta != null)
+            Text(delta, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600, height: 1.7)),
+          const SizedBox(height: 8),
+          if (pre == null)
+            FilledButton.tonalIcon(
+              onPressed: () => _startTest(pre: true),
+              icon: const Icon(Icons.flag_outlined),
+              label: const Text('ابدأ بالاختبار القبلي (٥ أسئلة) قبل القراءة'),
+            )
+          else
+            FilledButton.tonalIcon(
+              onPressed: () => _startTest(pre: false),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: Text(post == null ? 'اختبار بعدي (٥ أسئلة)' : 'أعد الاختبار البعدي'),
+            ),
+        ],
+      ),
+    );
   }
 
   void _go(int delta) {
@@ -91,6 +164,7 @@ class _BookLessonScreenState extends State<BookLessonScreen> {
                 Chip(visualDensity: VisualDensity.compact, label: Text(lesson.part)),
               ],
             ),
+            if (lesson.category != null) _testCard(scheme),
             for (final s in lesson.sections) _section(s, scheme),
             const Divider(height: 36),
             _referenceFooter(lesson, scheme),
@@ -216,11 +290,24 @@ class _BookLessonScreenState extends State<BookLessonScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(e.phrase, style: const TextStyle(fontSize: 22, height: 2, color: Color(0xFF0B3D2E))),
+          Text(e.phrase, style: const TextStyle(fontFamily: quranFontFamily, fontSize: 22, height: 2, color: Color(0xFF0B3D2E))),
           Text(
             hasRef ? '${e.note}  •  سورة ${surahName(e.surah!)} - الآية ${arabicDigits(e.ayah!)}' : e.note,
             style: TextStyle(fontSize: 13, color: scheme.outline, height: 1.6),
           ),
+          if (hasRef)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ReadingScreen(surahNumber: e.surah!, jumpToAyah: e.ayah),
+                  ),
+                ),
+                icon: const Icon(Icons.mic, size: 18),
+                label: const Text('اقرأ الآية وصحّح تلاوتك'),
+              ),
+            ),
         ],
       ),
     );

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/question.dart';
+import 'lesson_test.dart';
+import 'spaced_repetition.dart';
 
 /// تخزين محلي (يعمل دون اتصال): التقدم، الأخطاء، الإعدادات، الأسئلة المحمّلة، نصوص الآيات، تقدم الدروس.
 class StorageService {
@@ -42,7 +44,40 @@ class StorageService {
       wrong.add(q.id);
     }
     await _p.setStringList('wrong_ids', wrong.toList());
+    await _srsUpdate(q.id, isCorrect);
   }
+
+  // ───────── التكرار المتباعد ─────────
+  static const _srsKey = 'srs_v1';
+
+  Map<String, SrsEntry> get srsEntries {
+    final raw = _p.getString(_srsKey);
+    if (raw == null) return {};
+    try {
+      final m = jsonDecode(raw) as Map<String, dynamic>;
+      final out = <String, SrsEntry>{};
+      m.forEach((k, v) {
+        final e = SrsEntry.fromJson(v);
+        if (e != null) out[k] = e;
+      });
+      return out;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _srsUpdate(String id, bool correct) async {
+    final next = SpacedRepetition.update(
+        srsEntries, id, correct, SpacedRepetition.dayNumber(DateTime.now()));
+    await _p.setString(_srsKey, jsonEncode(next.map((k, v) => MapEntry(k, v.toJson()))));
+  }
+
+  /// الأسئلة المستحقة للمراجعة اليوم (بحسب الجدولة).
+  Set<String> get dueIds =>
+      SpacedRepetition.dueIds(srsEntries, SpacedRepetition.dayNumber(DateTime.now()));
+
+  /// عدد الأسئلة المجدولة (مستحقة وغير مستحقة بعد).
+  int get scheduledCount => srsEntries.length;
 
   Set<String> get wrongIds => (_p.getStringList('wrong_ids') ?? <String>[]).toSet();
 
@@ -52,6 +87,7 @@ class StorageService {
       await _p.remove('cor_${c.name}');
     }
     await _p.remove('wrong_ids');
+    await _p.remove(_srsKey);
   }
 
   // ───────── تقدم قراءة الدروس ─────────
@@ -150,6 +186,20 @@ class StorageService {
     } else {
       await _p.remove('book_lesson_$id');
     }
+  }
+
+  // اختبارات الدروس القبلية والبعدية (تُمسح مع تقدم دروس الكتاب لأن المفتاح يبدأ بـ book_lesson_)
+  LessonTestResult? lessonTest(String lessonId, {required bool pre}) =>
+      LessonTestResult.decode(_p.getString('book_lesson_test_${pre ? 'pre' : 'post'}_$lessonId'));
+
+  List<String> lessonTestIds(String lessonId) =>
+      _p.getStringList('book_lesson_test_ids_$lessonId') ?? <String>[];
+
+  Future<void> saveLessonTest(String lessonId,
+      {required bool pre, required int score, required int total, List<String> ids = const []}) async {
+    await _p.setString('book_lesson_test_${pre ? 'pre' : 'post'}_$lessonId',
+        LessonTestResult(score, total).encode());
+    if (pre) await _p.setStringList('book_lesson_test_ids_$lessonId', ids);
   }
 
   Future<void> resetBookLessons() async {
