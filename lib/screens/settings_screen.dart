@@ -128,6 +128,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final readLessons = StorageService.instance.readLessonsCount;
+
     return Scaffold(
       appBar: AppBar(title: const Text('الإعدادات')),
       body: ListView(
@@ -262,6 +264,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     }),
             icon: const Icon(Icons.delete_outline),
             label: const Text('مسح التقدم وسجل الأخطاء'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _busy || readLessons == 0
+                ? null
+                : () => _confirm(
+                      'مسح تقدم الدروس',
+                      'سيتم إلغاء تعليم جميع الدروس كمقروءة ($readLessons درسًا).',
+                      () async {
+                        await StorageService.instance.resetLessonProgress();
+                        if (mounted) {
+                          setState(() {});
+                          _snack('تم مسح تقدم قراءة الدروس');
+                        }
+                      },
+                    ),
+            icon: const Icon(Icons.menu_book_outlined),
+            label: Text('مسح تقدم الدروس ($readLessons)'),
           ),
           const SizedBox(height: 24),
           const Text(

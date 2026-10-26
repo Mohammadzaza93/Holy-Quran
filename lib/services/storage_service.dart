@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/question.dart';
 
-/// تخزين محلي (يعمل دون اتصال): التقدم، الأخطاء، الإعدادات، الأسئلة المحمّلة، نصوص الآيات.
+/// تخزين محلي (يعمل دون اتصال): التقدم، الأخطاء، الإعدادات، الأسئلة المحمّلة، نصوص الآيات، تقدم الدروس.
 class StorageService {
   StorageService._(this._p);
 
@@ -52,6 +52,35 @@ class StorageService {
       await _p.remove('cor_${c.name}');
     }
     await _p.remove('wrong_ids');
+  }
+
+  // ───────── تقدم قراءة الدروس ─────────
+
+  static const _lessonReadKey = 'lesson_read_ids';
+
+  /// مجموعة معرّفات الدروس التي قرأها المستخدم
+  Set<String> get readLessonIds =>
+      (_p.getStringList(_lessonReadKey) ?? <String>[]).toSet();
+
+  bool isLessonRead(String lessonId) => readLessonIds.contains(lessonId);
+
+  Future<void> markLessonRead(String lessonId) async {
+    final ids = readLessonIds;
+    if (ids.contains(lessonId)) return;
+    ids.add(lessonId);
+    await _p.setStringList(_lessonReadKey, ids.toList());
+  }
+
+  Future<void> markLessonUnread(String lessonId) async {
+    final ids = readLessonIds;
+    if (!ids.remove(lessonId)) return;
+    await _p.setStringList(_lessonReadKey, ids.toList());
+  }
+
+  int get readLessonsCount => readLessonIds.length;
+
+  Future<void> resetLessonProgress() async {
+    await _p.remove(_lessonReadKey);
   }
 
   // ───────── الإعدادات ─────────

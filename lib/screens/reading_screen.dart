@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/surahs.dart';
 import '../services/mushaf_service.dart';
 import '../services/storage_service.dart';
+import 'memorization_report_screen.dart';
 import 'practice_screen.dart';
 
 /// عرض السورة للقراءة. الضغط على أي آية يفتح شاشة التسميع والتصحيح لتلك الآية.
@@ -39,7 +40,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _loading = false;
       _failed = s == null;
     });
-    // الانتقال المباشر إلى الآية عند «المتابعة»
     if (s != null && widget.jumpToAyah != null) {
       final idx = s.ayat.indexWhere((a) => a.number == widget.jumpToAyah);
       if (idx >= 0) _openPractice(idx);
@@ -53,11 +53,29 @@ class _ReadingScreenState extends State<ReadingScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _openReport() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MemorizationReportScreen(surahNumber: widget.surahNumber),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final n = widget.surahNumber;
     return Scaffold(
-      appBar: AppBar(title: Text('سورة ${surahName(n)}')),
+      appBar: AppBar(
+        title: Text('سورة ${surahName(n)}'),
+        actions: [
+          IconButton(
+            tooltip: 'تقرير ضعف الحفظ',
+            icon: const Icon(Icons.analytics_outlined),
+            onPressed: _openReport,
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _failed
@@ -71,6 +89,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
     final store = StorageService.instance;
     final scheme = Theme.of(context).colorScheme;
     final showBasmala = surah.number != 1 && surah.number != 9;
+    final count = surah.ayat.length;
+    final mastered = store.masteredAyat(surah.number, count);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -82,8 +102,23 @@ class _ReadingScreenState extends State<ReadingScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Text(
-            'اقرأ الآية بصوتك: اضغط على أي آية ثم على زر الميكروفون، وسيُظهر لك التطبيق الكلمات التي أخطأت فيها أو تركتها.',
+            'اقرأ الآية بصوتك: اضغط على أي آية ثم على زر الميكروفون. أثناء القراءة يظهر تلوين فوري للكلمات. من أيقونة التقرير أعلى الشاشة تعرض الآيات الضعيفة.',
             style: TextStyle(height: 1.7, fontSize: 14),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Card(
+          color: scheme.secondaryContainer,
+          child: ListTile(
+            onTap: _openReport,
+            leading: Icon(Icons.analytics, color: scheme.secondary),
+            title: const Text('تقرير ضعف الحفظ', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(
+              mastered == 0
+                  ? 'لم تُسجَّل محاولات بعد في هذه السورة'
+                  : 'أتقنت $mastered من $count آية · اضغط لعرض التفاصيل',
+            ),
+            trailing: const Icon(Icons.chevron_left),
           ),
         ),
         if (showBasmala)
@@ -130,9 +165,17 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             Chip(
                               visualDensity: VisualDensity.compact,
                               avatar: Icon(
-                                score >= 0.9 ? Icons.verified : Icons.mic,
+                                score >= 0.9
+                                    ? Icons.verified
+                                    : score >= 0.8
+                                        ? Icons.trending_up
+                                        : Icons.error_outline,
                                 size: 16,
-                                color: score >= 0.9 ? Colors.green.shade700 : Colors.orange.shade800,
+                                color: score >= 0.9
+                                    ? Colors.green.shade700
+                                    : score >= 0.8
+                                        ? Colors.orange.shade800
+                                        : Colors.red.shade700,
                               ),
                               label: Text('أفضل نتيجة ${(score * 100).round()}%'),
                             )

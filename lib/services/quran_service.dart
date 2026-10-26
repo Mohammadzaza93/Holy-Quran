@@ -9,13 +9,30 @@ import '../models/question.dart';
 import 'storage_service.dart';
 
 /// القراء المتاحون (جميعهم يقرؤون برواية حفص عن عاصم).
-/// القيمة هي اسم المجلد في موقع everyayah.com
+/// المفتاح = اسم المجلد في everyayah.com
 const Map<String, String> reciters = {
-  'Alafasy_128kbps': 'مشاري العفاسي',
-  'Husary_128kbps': 'محمود خليل الحصري',
+  // المعلمون والمرتلون المفضلون للتعلّم
+  'Ayman_Sowaid_64kbps': 'أيمن رشدي سويد',
+  'Husary_128kbps': 'محمود خليل الحصري (مرتل)',
+  'Husary_128kbps_Mujawwad': 'محمود خليل الحصري (مجوّد)',
+  'Husary_Muallim_128kbps': 'محمود خليل الحصري (معلّم)',
   'Minshawy_Murattal_128kbps': 'محمد صديق المنشاوي (مرتل)',
+  'Minshawy_Mujawwad_192kbps': 'محمد صديق المنشاوي (مجوّد)',
   'Abdul_Basit_Murattal_192kbps': 'عبد الباسط عبد الصمد (مرتل)',
+  'Abdul_Basit_Mujawwad_128kbps': 'عبد الباسط عبد الصمد (مجوّد)',
+  // قراء معاصرون شائعون
+  'Alafasy_128kbps': 'مشاري راشد العفاسي',
+  'MaherAlMuaiqly128kbps': 'ماهر المعيقلي',
   'Abdurrahmaan_As-Sudais_192kbps': 'عبد الرحمن السديس',
+  'Saood_ash-Shuraym_128kbps': 'سعود الشريم',
+  'Yasser_Ad-Dussary_128kbps': 'ياسر الدوسري',
+  'Hudhaify_128kbps': 'علي بن عبد الرحمن الحذيفي',
+  'Abu_Bakr_Ash-Shaatree_128kbps': 'أبو بكر الشاطري',
+  'Hani_Rifai_192kbps': 'هاني الرفاعي',
+  'Abdullah_Basfar_192kbps': 'عبد الله بصفر',
+  'Fares_Abbad_64kbps': 'فارس عباد',
+  'Nasser_Alqatami_128kbps': 'ناصر القطامي',
+  'Salah_Al_Budair_128kbps': 'صلاح البدير',
 };
 
 /// يتعامل مع نص الآية (من الإنترنت مع تخزين محلي) وصوتها (بث أو ملف محمّل).
