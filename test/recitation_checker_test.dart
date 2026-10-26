@@ -84,7 +84,7 @@ void main() {
     });
 
     test('نقص حرف', () {
-      final f = one('وَٱخْشَوْنِ', 'واخشون')!;
+      final f = one('وَٱخْشَوْنِي', 'واخشون')!;
       expect(f.kind, LahnKind.letterOmission);
       expect(f.expectedLetter, 'ي');
     });
