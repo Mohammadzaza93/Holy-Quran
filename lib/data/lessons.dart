@@ -1,390 +1,54 @@
 import '../models/lesson.dart';
-import 'lessons_extra.dart';
 
-/// سلسلة شروح التجويد المتتابعة (موسّعة بالكامل).
-/// المحتوى أصلي ومستوحى من منهج الشيخ أيمن رشدي سويد مع الإسناد الواضح في كل درس.
-/// الدروس 1–26 في هذا الملف، والدروس 27–36 في lessons_extra.dart ثم تُدمج هنا.
-final List<Lesson> _coreLessons = [
-  // ───────────────────── 1 ─────────────────────
-  Lesson(
-    id: 'lesson-01',
-    order: 1,
-    title: 'ما هو القرآن الكريم؟',
-    summary: 'تعريف القرآن وطريقتا نقله: المكتوب والمنطوق',
-    relatedCategory: null,
-    content: '''القرآن الكريم هو كلام الله تعالى المعجز، المنزل على قلب سيدنا محمد صلى الله عليه وسلم، المتعبد بتلاوته، الموجود بين دفتي المصحف، المنقول إلينا بالتواتر.
-
-التواتر: خبر وصل إلينا بطريق مأمون من جيل إلى جيل بحيث يستحيل عقلًا اتفاق الرواة على الكذب.
-
-بلغنا القرآن بطريقتين متلازمتين لا تنفصلان:
-• مكتوبًا: النص الذي كُتب في عهد النبي ثم جُمع في عهد أبي بكر (المصحف الصديقي) ثم نُسخ في عهد عثمان وأُرسل إلى الأمصار مع مقرئين.
-• منطوقًا: النقل الصوتي الذي أخذه الصحابة من فم النبي وأعادوه عليه حتى يرضى، ثم نقله التابعون ومن بعدهم بسند متصل إلى يومنا.
-
-أول ما نزل: ﴿اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ﴾ (العلق 1).
-وآخر ما نزل يتعلق بآية في البقرة عن التقوى ويوم الحساب.
-
-خلاصة عملية: لا يكفي الاعتماد على النص المكتوب وحده. التجويد علم سماعي في أصله، ولا يُتقن إلا بالتلقي والمشافهة من معلم متقن.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-02',
-    order: 2,
-    title: 'مراحل تدوين القرآن ونقله الصوتي',
-    summary: 'كيف جُمع المصحف وكيف استمر السند الصوتي',
-    relatedCategory: null,
-    content: '''مراحل التدوين المكتوب:
-1. كتابة كل مقطع فور نزوله بأمر النبي صلى الله عليه وسلم.
-2. جمع القطع في مصحف واحد زمن أبي بكر الصديق.
-3. نسخ عدة مصاحف من المصحف الصديقي في عهد عثمان بن عفان وإرسالها إلى الأمصار.
-4. انتشار نسخ لا تحصى بين المسلمين.
-5. ظهور مؤلفات تضبط خصائص الرسم القرآني.
-
-مراحل النقل الصوتي:
-1. نزل جبريل بالقرآن على قلب النبي.
-2. تلقى الصحابة من النبي وأعادوه عليه حتى يرضى.
-3. نقل الصحابة إلى التابعين، ثم استمر السند متصلًا إلى زماننا.
-
-هذه السلسلة المتصلة هي الضمانة الكبرى لصحة القراءة. لذلك يشدد العلماء على أن التجويد لا يُؤخذ من الكتب وحدها، بل من أفواه المقرئين.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-03',
-    order: 3,
-    title: 'الفرق بين الأحرف السبعة والقراءات',
-    summary: 'توضيح العلاقة بين الأحرف السبعة والقراءات السبع والعشر',
-    relatedCategory: null,
-    content: '''قال النبي صلى الله عليه وسلم: «إن هذا القرآن أُنزل على سبعة أحرف». المقصود تسهيل القراءة على قبائل العرب المختلفة في اللهجات والنطق.
-
-الأحرف السبعة دائرة واسعة تشمل أوجهًا متعددة في النطق (مثل الاختلاف في الهمز أو المد أو بعض الحركات)، مع بقاء المعنى واحدًا.
-
-أما القراءات السبع أو العشر فهي اختيارات أئمة كبار (نافع، ابن كثير، أبو عمرو، ابن عامر، عاصم، حمزة، الكسائي، وأبو جعفر، يعقوب، خلف) نقلوا ما وصل إليهم بسند متصل عن النبي.
-
-كل القراءات المعتبرة صحيحة ومتواترة، وتقع داخل دائرة الأحرف السبعة. رواية حفص عن عاصم (التي يعتمدها هذا التطبيق) واحدة من أشهر هذه القراءات وأكثرها انتشارًا.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-04',
-    order: 4,
-    title: 'آداب التلاوة',
-    summary: 'السلوك المطلوب عند قراءة القرآن',
-    relatedCategory: null,
-    content: '''ينبغي لقارئ القرآن أن يجلس للقراءة وهو على طهارة كاملة، نظيف الثياب، متطيبًا، مستاكًا، ساكنًا، خاشعًا، متواضعًا، مستحضرًا عظمة الله، متدبرًا لمعانيه.
-
-عند آيات النعيم والجنات يعلو وجهه البشر والفرح.
-وعند آيات العذاب والنار يقشعر جلده ويعلوه الخوف، يرجو رحمة ربه ويخاف عذابه.
-
-كما ينبغي أن يقرأ مرتلًا مجودًا، محافظًا على حقوق الحروف من مخارج وصفات ومدود وغنن بقدر استطاعته.
-
-قال النبي صلى الله عليه وسلم: «خيركم من تعلم القرآن وعلمه».
-وقال تعالى: ﴿إِنَّمَا الْمُؤْمِنُونَ الَّذِينَ إِذَا ذُكِرَ اللَّهُ وَجِلَتْ قُلُوبُهُمْ وَإِذَا تُلِيَتْ عَلَيْهِمْ آيَاتُهُ زَادَتْهُمْ إِيمَانًا﴾ (الأنفال 2).
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-05',
-    order: 5,
-    title: 'علم التجويد: تعريفه وحكمه ومباحثه',
-    summary: 'ما هو التجويد؟ وما حكم تعلمه والعمل به؟',
-    relatedCategory: null,
-    content: '''التجويد لغة: التحسين.
-واصطلاحًا: إعطاء كل حرف حقه ومستحقه مخرجًا وصفة ووقفًا وابتداءً من غير تكلف ولا تعسف، طبقًا لما تلقاه المسلمون من رسول الله صلى الله عليه وسلم.
-
-حكمه شرعًا:
-• العلم به: فرض كفاية.
-• العمل به: فرض عين على كل مسلم ومسلمة يقرأ القرآن.
-
-موضوعه: الألفاظ القرآنية من آيات ثم كلمات ثم أحرف.
-ثمرته: صون اللسان عن الخطأ في كتاب الله.
-غايته: الفوز بسعادة الدارين.
-فضله: أشرف العلوم لتعلقه بأشرف الكتب.
-
-ميزته عن سائر العلوم: لا يمكن إتقانه دون معلم يلقن النطق مشافهة، وهو علم محدود لا مجال فيه لرأي أو اجتهاد.
-
-مباحثه الرئيسية:
-1. مخارج الحروف
-2. الصفات الذاتية والعرضية
-3. أحكام النون الساكنة والتنوين
-4. أحكام الميم الساكنة
-5. أحكام المد والقصر
-6. همزة الوصل والقطع
-7. الوقف والابتداء
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-06',
-    order: 6,
-    title: 'الاستعاذة والبسملة',
-    summary: 'صيغة الاستعاذة والبسملة وأوجهها بين السور',
-    relatedCategory: null,
-    content: '''الاستعاذة: الاستجارة بالله من الشيطان. صيغتها: «أعوذ بالله من الشيطان الرجيم». ليست من القرآن لكنها امتثال لأمر الله: ﴿فَإِذَا قَرَأْتَ الْقُرْآنَ فَاسْتَعِذْ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ﴾ (النحل 98).
-
-يُجهر بها في المحافل والتعليم لينصت السامع، ويُسر بها في الصلاة والانفراد.
-
-البسملة: «بسم الله الرحمن الرحيم». آية ثابتة في أول كل سورة عدا التوبة (لأنها نزلت بالسيف والعذاب).
-
-بين السورتين أربعة أوجه:
-1. قطع الجميع (جائز)
-2. وصل الجميع (جائز)
-3. قطع الأول ووصل الثاني (جائز)
-4. وصل الأول وقطع الثاني (غير جائز) لأن البسملة للابتداء لا للانتهاء.
-
-عند البدء من وسط السورة: الاستعاذة واجبة، والبسملة اختيارية.
-بين الأنفال والتوبة: لا بسملة ولا استعاذة عند الوصل المباشر.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-07',
-    order: 7,
-    title: 'اللحن الجلي واللحن الخفي',
-    summary: 'أنواع الخطأ في التلاوة وحكم كل نوع',
-    relatedCategory: null,
-    content: '''اللحن: الخطأ في تلاوة القرآن، أي الميل عن الصواب.
-
-1. اللحن الجلي:
-خطأ يطرأ على الألفاظ فيخل بالمعنى أو الإعراب، فيخرج الحرف عن حيزه. يعرفه علماء القراءة وغيرهم.
-أمثلة:
-• تغيير حرف بحرف: ﴿ضَلَّ﴾ تُقرأ «ظَلَّ».
-• تغيير حركة بحركة: ﴿أَنْعَمْتَ﴾ تُقرأ «أَنْعَمْتُ» فيتغير المعنى.
-هذا مذموم ويأثم فاعله.
-
-2. اللحن الخفي:
-خطأ يخل بكمال صفات الحرف دون إخراجه عن حيزه. لا يعرفه إلا المهرة.
-أمثلة:
-• ترك المد الواجب: ﴿السَّمَاءِ﴾ بدون مد.
-• إظهار النون عند التاء في موضع الإخفاء: ﴿أَنْتُمْ﴾.
-لا يأثم القارئ به عادة لأنه لا يغير المعنى، لكن يُشدد عليه في التلقي والمشافهة.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-08',
-    order: 8,
-    title: 'مراتب السرعات في التلاوة',
-    summary: 'التحقيق والتدوير والحدر وعلاقتها بالترتيل',
-    relatedCategory: null,
-    content: '''تتغير سرعة الفم في التلاوة، لكن الأذن البشرية تضبط ثلاث سرعات رئيسية:
-
-• التحقيق: البطء والهدوء في إخراج الحرف دون تمطيط. مناسب للتعليم والتعلم.
-• الحدر: السرعة في القراءة دون دمج للحروف. مناسب للمراجعة والختم.
-• التدوير: التوسط بين البطء والسرعة. أكثر ما يُستعمل في التلاوة العامة.
-
-أما الترتيل فهو يشمل السرعات الثلاث، لقوله تعالى: ﴿وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا﴾ (المزمل 4).
-فمن حقق أو دوّر أو حدر فلا بد له أن يرتل، أي يعطي الحروف حقوقها ومستحقاتها.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-09',
-    order: 9,
-    title: 'كيف يحدث الحرف؟',
-    summary: 'أساس فهم المخارج: القرع والقلع واهتزاز الحبال الصوتية',
-    relatedCategory: 'makharij',
-    content: '''أصغر وحدة في القرآن هي الحرف. الحرف صوت يعتمد على مخرج معين.
-
-الصوت: تخلخل وتموج في طبقات الهواء ناتج عن اصطدام أو تباعد أو اهتزاز.
-
-الحروف الساكنة (عدا المدية واللينية) تحدث بالتصادم بين طرفي عضوين (القرع).
-حروف المد واللين تحدث باهتزاز الحبال الصوتية.
-الحروف المتحركة تخرج بالتباعد (القلع).
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-10',
-    order: 10,
-    title: 'مخارج الحروف (1): الجوف والحلق',
-    summary: 'المخارج المقدرة والمحققة في الجوف والحلق مع أمثلة',
-    relatedCategory: 'makharij',
-    content: '''المخارج الرئيسة: الجوف، الحلق، اللسان، الشفتان، الخيشوم.
-
-الجوف: الألف والواو والياء المدية.
-الحلق: أقصى (ء هـ) وسط (ع ح) أدنى (غ خ).
-
-أمثلة: ﴿قَالَ﴾ ﴿يَأْتُونَ﴾ ﴿أَنْعَمْتَ﴾ ﴿فَسَيُنْغِضُونَ﴾
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-11',
-    order: 11,
-    title: 'مخارج الحروف (2): اللسان',
-    summary: 'مخارج أقصى اللسان ووسطه وحافته وطرفه مع أمثلة',
-    relatedCategory: 'makharij',
-    content: '''أقصى اللسان: ق ك
-وسطه: ج ش ي
-حافته: ض ل
-طرف: ن ر
-منبت الثنايا: ط د ت
-منتهى الطرف: ص ز س + ظ ذ ث
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-12',
-    order: 12,
-    title: 'مخارج الحروف (3): الشفتان والخيشوم',
-    summary: 'مخارج الشفتين والغنة مع أمثلة',
-    relatedCategory: 'makharij',
-    content: '''الشفتان: ف م ب و
-الخيشوم: الغنة في النون والميم.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-13',
-    order: 13,
-    title: 'صفات الحروف: الشدة والرخاوة والبينية',
-    summary: 'جريان الصوت أو انحباسه مع أمثلة وتطبيق زمني',
-    relatedCategory: 'sifat',
-    content: '''الشديدة (أجد قط بكت) | الرخوة | البينية (لن عمر)
-زمن السواكن: رخوة > بينية > شديدة.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-14',
-    order: 14,
-    title: 'صفات الحروف: الهمس والجهر',
-    summary: 'جريان النفس أو انحباسه مع أمثلة',
-    relatedCategory: 'sifat',
-    content: '''المهموسة: فحثه شخص سكت
-المجهورة: الباقي.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-15',
-    order: 15,
-    title: 'صفات الحروف: الاستعلاء والاستفال والإطباق',
-    summary: 'اتجاه الصوت وتفخيم الحروف مع مراتب التفخيم',
-    relatedCategory: 'sifat',
-    content: '''المستعلية: خص ضغط قظ (مفخمة)
-المطبقة: ص ض ط ظ (أقوى تفخيمًا)
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-16',
-    order: 16,
-    title: 'التفخيم والترقيق: الألف واللام',
-    summary: 'قواعد تفخيم وترقيق الألف واللام مع أمثلة',
-    relatedCategory: 'misc',
-    content: '''الألف تابعة لما قبلها.
-لام الجلالة تفخم بعد فتح أو ضم، وترقق بعد كسر.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-17',
-    order: 17,
-    title: 'أحكام الراء: التفخيم والترقيق',
-    summary: 'حالات تفخيم الراء وترقيقها وجواز الوجهين مع أمثلة',
-    relatedCategory: 'misc',
-    content: '''تُفخم في 8 حالات، تُرقق في 4، وجهان في حالتين (فرق، قطر/مصر).
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-18',
-    order: 18,
-    title: 'أحكام النون الساكنة والتنوين (1): الإظهار والإدغام',
-    summary: 'الإظهار الحلقي والإدغام بغنة وبغير غنة مع أمثلة',
-    relatedCategory: 'noon',
-    content: '''إظهار عند ءهـعحغخ | إدغام بغنة ينمو | بغير غنة ر ل
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-19',
-    order: 19,
-    title: 'أحكام النون الساكنة والتنوين (2): الإقلاب والإخفاء',
-    summary: 'الإقلاب عند الباء والإخفاء الحقيقي مع أمثلة',
-    relatedCategory: 'noon',
-    content: '''إقلاب عند ب | إخفاء عند باقي الحروف الـ15.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-20',
-    order: 20,
-    title: 'أحكام الميم الساكنة',
-    summary: 'الإخفاء الشفوي والإدغام الشفوي والإظهار الشفوي مع أمثلة',
-    relatedCategory: 'meem',
-    content: '''إخفاء عند ب | إدغام عند م | إظهار عند الباقي.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-21',
-    order: 21,
-    title: 'أحكام المدود (1): المد الطبيعي ومد البدل والعوض',
-    summary: 'المد الأصلي وملحقاته مع المقدار والأمثلة',
-    relatedCategory: 'madd',
-    content: '''طبيعي وبدل وعوض وصلة صغرى: حركتان.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-22',
-    order: 22,
-    title: 'أحكام المدود (2): المد المتصل والمنفصل والصلة الكبرى',
-    summary: 'المدود الفرعية بسبب الهمز مع المقدار عند حفص',
-    relatedCategory: 'madd',
-    content: '''متصل ومنفصل وصلة كبرى: 4 أو 5 حركات عند حفص.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-23',
-    order: 23,
-    title: 'أحكام المدود (3): المد اللازم والعارض للسكون واللين',
-    summary: 'المدود بسبب السكون مع المقدار والأمثلة',
-    relatedCategory: 'madd',
-    content: '''لازم: 6 | عارض ولين: 2 أو 4 أو 6.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-24',
-    order: 24,
-    title: 'القلقلة',
-    summary: 'تعريفها وحروفها ومراتبها مع أمثلة',
-    relatedCategory: 'misc',
-    content: '''حروف قطب جد | مراتب: مشدد موقوف > ساكن موقوف > ساكن وسط.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-25',
-    order: 25,
-    title: 'خصائص رواية حفص عن عاصم',
-    summary: 'أبرز ما يميز حفصًا: السكت والإشمام والإمالة والتسهيل',
-    relatedCategory: 'hafs',
-    content: '''سكت في مواضع معلومة | إشمام في تأمنا | إمالة مجراها | تسهيل أأعجمي.
-
-— ${Lesson.attribution}''',
-  ),
-  Lesson(
-    id: 'lesson-26',
-    order: 26,
-    title: 'الوقف والابتداء (مقدمة)',
-    summary: 'أهمية الوقف وأقسامه باختصار مع أمثلة',
-    relatedCategory: 'misc',
-    content: '''تام وكاف وحسن وقبيح | علامات المصحف مساعدة.
-
-— ${Lesson.attribution}''',
-  ),
-];
-
-/// القائمة الكاملة مرتبة (الأساسية + الإضافية)
+/// سلسلة شرح كتاب التجويد المصور — الدكتور أيمن رشدي سويد
+/// المصدر: قائمة التشغيل الرسمية على يوتيوب
+/// https://www.youtube.com/playlist?list=PLJi21Zen45zQ-p3e38-Wb94LhDKIZ7sac
 final List<Lesson> tajweedLessons = [
-  ..._coreLessons,
-  ...extraLessons,
+  Lesson(id: 'ep-01', order: 1, title: 'مقدمة في علم التجويد (1)', summary: 'الحلقة 1 — مقدمة', youtubeVideoId: 'H6WTnSZ6G-0'),
+  Lesson(id: 'ep-02', order: 2, title: 'مقدمة في علم التجويد (2)', summary: 'الحلقة 2 — تتمة المقدمة', youtubeVideoId: 'ChtM254qsdU'),
+  Lesson(id: 'ep-03', order: 3, title: 'مخارج الحروف — الجوف', summary: 'الحلقة 3 — باب المخارج', youtubeVideoId: 'Es_a0IGHofc', relatedCategory: 'makharij'),
+  Lesson(id: 'ep-04', order: 4, title: 'مخارج الحروف — الحلق', summary: 'الحلقة 4 — باب المخارج', youtubeVideoId: '2BFpfzbBBVo', relatedCategory: 'makharij'),
+  Lesson(id: 'ep-05', order: 5, title: 'مخارج الحروف — اللسان (1)', summary: 'الحلقة 5 — باب المخارج', youtubeVideoId: 'vwaWWcV0Z5M', relatedCategory: 'makharij'),
+  Lesson(id: 'ep-06', order: 6, title: 'مخارج الحروف — اللسان (2)', summary: 'الحلقة 6 — باب المخارج', youtubeVideoId: '8zIZQkaySyQ', relatedCategory: 'makharij'),
+  Lesson(id: 'ep-07', order: 7, title: 'صفات الحروف (مقدمة)', summary: 'الحلقة 7 — باب الصفات', youtubeVideoId: 'aYO2mrrHqPo', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-08', order: 8, title: 'الشدة والرخاوة والبينية', summary: 'الحلقة 8 — باب الصفات', youtubeVideoId: '5q5rI3qBLx0', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-09', order: 9, title: 'قياس أزمنة الحروف', summary: 'الحلقة 9 — السواكن والمتحركة', youtubeVideoId: 'AZSlZoUfS9Y', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-10', order: 10, title: 'الاستعلاء والاستفال', summary: 'الحلقة 10 — باب الصفات', youtubeVideoId: 'xh_MHe1YOdA', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-11', order: 11, title: 'حكم الألف واللام والراء', summary: 'الحلقة 11 — التفخيم والترقيق', youtubeVideoId: 'MTkmsbjK0Tc', relatedCategory: 'misc'),
+  Lesson(id: 'ep-12', order: 12, title: 'صفات الحروف (تتمة)', summary: 'الحلقة 12 — باب الصفات', youtubeVideoId: 'Ydo53V1V1V8', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-13', order: 13, title: 'القلقلة', summary: 'الحلقة 13 — باب الصفات', youtubeVideoId: 'KgotHP9a7-o', relatedCategory: 'misc'),
+  Lesson(id: 'ep-14', order: 14, title: 'نصائح لأهل القرآن', summary: 'الحلقة 14 — توجيهات', youtubeVideoId: 'Y7Y7g3GIl7Y'),
+  Lesson(id: 'ep-15', order: 15, title: 'اللين', summary: 'الحلقة 15 — باب الصفات', youtubeVideoId: 'OJDGrpOFyw8', relatedCategory: 'sifat'),
+  Lesson(id: 'ep-16', order: 16, title: 'الغنة صفةً', summary: 'الحلقة 16 — باب الصفات', youtubeVideoId: 'I3-IOD49WgE', relatedCategory: 'noon'),
+  Lesson(id: 'ep-17', order: 17, title: 'أبرز أخطاء نطق حروف الهجاء', summary: 'الحلقة 17 — تنبيهات', youtubeVideoId: ' _2RZIEq0t6s'.trim(), relatedCategory: 'makharij'),
+  Lesson(id: 'ep-18', order: 18, title: 'إتمام الحركات', summary: 'الحلقة 18', youtubeVideoId: '-LxbHpJs9bw'),
+  Lesson(id: 'ep-19', order: 19, title: 'الوقف والابتداء', summary: 'الحلقة 19', youtubeVideoId: 'tOW9ZVAI0eU', relatedCategory: 'misc'),
+  Lesson(id: 'ep-20', order: 20, title: 'الوقف والابتداء — تنبيهات', summary: 'الحلقة 20', youtubeVideoId: 'bteuCHz-mRM', relatedCategory: 'misc'),
+  Lesson(id: 'ep-21', order: 21, title: 'مقدمة القسم الثاني', summary: 'الحلقة 21', youtubeVideoId: 'KvIwlbpMWIs'),
+  Lesson(id: 'ep-22', order: 22, title: 'الحرفان الملتقيان', summary: 'الحلقة 22', youtubeVideoId: 'Z9hDuv7DYMQ', relatedCategory: 'misc'),
+  Lesson(id: 'ep-23', order: 23, title: 'الحرفان المتقاربان', summary: 'الحلقة 23', youtubeVideoId: 'LMtDtKjEAzI', relatedCategory: 'misc'),
+  Lesson(id: 'ep-24', order: 24, title: 'أحكام الميم الساكنة', summary: 'الحلقة 24 — إدغام وإخفاء وإظهار', youtubeVideoId: 'gyrtmirqn_M', relatedCategory: 'meem'),
+  Lesson(id: 'ep-25', order: 25, title: 'أحكام النون الساكنة والتنوين', summary: 'الحلقة 25', youtubeVideoId: 'LYOO-6f3s0U', relatedCategory: 'noon'),
+  Lesson(id: 'ep-26', order: 26, title: 'النون الساكنة — الإخفاء', summary: 'الحلقة 26', youtubeVideoId: '1mydlMCh9eg', relatedCategory: 'noon'),
+  Lesson(id: 'ep-27', order: 27, title: 'المدود — تعريف المد', summary: 'الحلقة 27', youtubeVideoId: '3tL5YYdjnTw', relatedCategory: 'madd'),
+  Lesson(id: 'ep-28', order: 28, title: 'قياس أزمنة المدود', summary: 'الحلقة 28', youtubeVideoId: 'bfbB-YxuDpw', relatedCategory: 'madd'),
+  Lesson(id: 'ep-29', order: 29, title: 'المد الطبيعي', summary: 'الحلقة 29', youtubeVideoId: 'd_W1cbLbwM0', relatedCategory: 'madd'),
+  Lesson(id: 'ep-30', order: 30, title: 'المد الجائز المنفصل', summary: 'الحلقة 30', youtubeVideoId: 'VVoZxsr8uiQ', relatedCategory: 'madd'),
+  Lesson(id: 'ep-31', order: 31, title: 'الحروف المقطعة (1)', summary: 'الحلقة 31', youtubeVideoId: '5za4w-bg6-U', relatedCategory: 'madd'),
+  Lesson(id: 'ep-32', order: 32, title: 'الحروف المقطعة (2)', summary: 'الحلقة 32', youtubeVideoId: 'JWjyU5irlF4', relatedCategory: 'madd'),
+  Lesson(id: 'ep-33', order: 33, title: 'المد العارض للسكون ومد اللين', summary: 'الحلقة 33', youtubeVideoId: 'lbDV5QSj_vY', relatedCategory: 'madd'),
+  Lesson(id: 'ep-34', order: 34, title: 'قاعدة أقوى السببين', summary: 'الحلقة 34', youtubeVideoId: '1P32Jelgu0A', relatedCategory: 'madd'),
+  Lesson(id: 'ep-35', order: 35, title: 'التقاء الساكنين', summary: 'الحلقة 35', youtubeVideoId: 'MEuYX35zBEc'),
+  Lesson(id: 'ep-36', order: 36, title: 'مواضيع متفرقة (إمالة وغيرها)', summary: 'الحلقة 36', youtubeVideoId: 'hLbqfHzw_kI', relatedCategory: 'hafs'),
+  Lesson(id: 'ep-37', order: 37, title: 'كلمات خاصة على رواية حفص', summary: 'الحلقة 37', youtubeVideoId: 'qBWCZZWsz7I', relatedCategory: 'hafs'),
+  Lesson(id: 'ep-38', order: 38, title: 'الرَّوم والإشمام', summary: 'الحلقة 38', youtubeVideoId: '9MS2pHBYU_s', relatedCategory: 'hafs'),
+  Lesson(id: 'ep-39', order: 39, title: 'ما لا يدخله الروم ولا الإشمام', summary: 'الحلقة 39', youtubeVideoId: 'QBa2UXeN-TE', relatedCategory: 'hafs'),
+  Lesson(id: 'ep-40', order: 40, title: 'الألفات السبعة', summary: 'الحلقة 40', youtubeVideoId: 'WqudUBqqlZQ', relatedCategory: 'hafs'),
+  Lesson(id: 'ep-41', order: 41, title: 'همزة القطع', summary: 'الحلقة 41', youtubeVideoId: 'rySLUV_lcgU'),
+  Lesson(id: 'ep-42', order: 42, title: 'مراحل تطور كتابة المصحف (1)', summary: 'الحلقة 42', youtubeVideoId: 'cHDr7oV02nc'),
+  Lesson(id: 'ep-43', order: 43, title: 'مراحل تطور كتابة المصحف (2)', summary: 'الحلقة 43', youtubeVideoId: 'PiIsjbNVlS8'),
+  Lesson(id: 'ep-44', order: 44, title: 'مراحل تطور كتابة المصحف (3)', summary: 'الحلقة 44', youtubeVideoId: 'X920piSRPgs'),
+  Lesson(id: 'ep-45', order: 45, title: 'حفظ القرآن الكريم', summary: 'الحلقة 45 — خاتمة السلسلة', youtubeVideoId: '0pVF5wcFOJ8'),
 ];
 
 Lesson? getLessonByOrder(int order) {
