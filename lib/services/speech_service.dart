@@ -36,14 +36,27 @@ class SpeechService {
       }
       _initialized = true;
     }
+    // لا نمنع المستخدم إن لم تُظهر قائمة اللغات العربية: كثير من الأجهزة (شاومي وغيرها) تعيد
+    // قائمة ناقصة أو فارغة مع أن التعرف بالعربية يعمل. نجرّب «ar_SA» فإن فشل ظهر خطأ اللغة عند التسجيل.
     _localeId ??= await _pickArabicLocale();
-    return _localeId == null ? SpeechInit.noArabic : SpeechInit.ready;
+    return SpeechInit.ready;
   }
 
+  /// معرّف اللغة الذي اختاره الجهاز فعلاً؟ (false = جرّبنا ar_SA دون أن يعلنها الجهاز)
+  bool get localeAnnounced => _localeAnnounced;
+  bool _localeAnnounced = false;
+
   Future<String?> _pickArabicLocale() async {
-    final locales = await _stt.locales();
+    List<LocaleName> locales = const [];
+    try {
+      locales = await _stt.locales();
+    } catch (_) {}
     final arabic = locales.where((l) => l.localeId.toLowerCase().startsWith('ar')).toList();
-    if (arabic.isEmpty) return null;
+    if (arabic.isEmpty) {
+      _localeAnnounced = false;
+      return 'ar_SA';
+    }
+    _localeAnnounced = true;
     for (final l in arabic) {
       final id = l.localeId.toLowerCase().replaceAll('-', '_');
       if (id == 'ar_sa') return l.localeId;
