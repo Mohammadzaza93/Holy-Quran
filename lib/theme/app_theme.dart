@@ -19,7 +19,12 @@ class AppColors {
 class AppTheme {
   AppTheme._();
 
-  static ThemeData light() {
+  /// نسخة واحدة معاد استخدامها — لا تُبنى في كل إطار.
+  static final ThemeData lightTheme = _buildLight();
+
+  static ThemeData light() => lightTheme;
+
+  static ThemeData _buildLight() {
     final base = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: Brightness.light,
@@ -53,7 +58,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Color(0x0F000000)),
+          side: const BorderSide(color: Color(0x0F000000)),
         ),
       ),
       chipTheme: ChipThemeData(
