@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tajweed_quiz/services/lahn_jali.dart';
 import 'package:tajweed_quiz/services/recitation_checker.dart';
 
 void main() {
@@ -65,6 +66,51 @@ void main() {
       expect(r.nothingHeard, isTrue);
       expect(r.missing, 4);
       expect(r.score, 0.0);
+    });
+  });
+
+  group('اللحن الجلي', () {
+    LahnFinding? one(String expected, String heard) {
+      final r = RecitationChecker.compare(expected, heard);
+      return r.lahn.isEmpty ? null : r.lahn.first;
+    }
+
+    test('إبدال حرف: الثاء سيناً', () {
+      final f = one('ثَيِّبَاتٍ', 'سيبات')!;
+      expect(f.kind, LahnKind.letterSubstitution);
+      expect(f.expectedLetter, 'ث');
+      expect(f.heardLetter, 'س');
+      expect(f.hint, isNotNull);
+    });
+
+    test('نقص حرف', () {
+      final f = one('وَٱخْشَوْنِ', 'واخشون')!;
+      expect(f.kind, LahnKind.letterOmission);
+      expect(f.expectedLetter, 'ي');
+    });
+
+    test('زيادة حرف', () {
+      final f = one('دَعَانِ', 'دعاني')!;
+      expect(f.kind, LahnKind.letterAddition);
+      expect(f.heardLetter, 'ي');
+    });
+
+    test('إبدال كلمة بكلمة', () {
+      final f = one('رَبُّ ٱلْعَرْشِ ٱلْكَرِيمِ', 'رب العرش العظيم')!;
+      expect(f.kind, LahnKind.wordSubstitution);
+      expect(f.category, LahnCategory.words);
+    });
+
+    test('نقص كلمة وزيادتها', () {
+      final omit = RecitationChecker.compare('قُلْ هُوَ ٱللَّهُ أَحَدٌ', 'قل هو احد');
+      expect(omit.lahn.single.kind, LahnKind.wordOmission);
+      final add = RecitationChecker.compare('قُلْ هُوَ ٱللَّهُ أَحَدٌ', 'قل هو الله الله احد');
+      expect(add.lahn.single.kind, LahnKind.wordAddition);
+    });
+
+    test('القراءة الصحيحة لا لحن فيها', () {
+      final r = RecitationChecker.compare('قُلْ هُوَ ٱللَّهُ أَحَدٌ', 'قل هو الله احد');
+      expect(r.lahn, isEmpty);
     });
   });
 }

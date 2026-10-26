@@ -6,6 +6,8 @@
 /// (المدود، الغنة، الإخفاء، مخارج الحروف الدقيقة) فهذه تحتاج مقرئاً.
 library;
 
+import 'lahn_jali.dart';
+
 class ArabicText {
   ArabicText._();
 
@@ -75,7 +77,11 @@ class RecitationResult {
     required this.wrong,
     required this.missing,
     required this.score,
+    this.lahn = const [],
   });
+
+  /// ما يُشتبه فيه من اللحن الجلي (حروف وكلمات)
+  final List<LahnFinding> lahn;
 
   final List<WordResult> words;
   final List<String> extras;
@@ -221,6 +227,7 @@ class RecitationChecker {
       wrong: wrong,
       missing: missing,
       score: score,
+      lahn: LahnJali.analyze(words, extras),
     );
   }
 
