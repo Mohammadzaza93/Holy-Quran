@@ -28,7 +28,9 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
 
-    expect(find.text('اختبار التجويد - رواية حفص'), findsOneWidget);
-    expect(find.text('اختبار شامل (20 سؤالاً عشوائياً)'), findsOneWidget);
+    // العناوين بعد إعادة تصميم الواجهة
+    expect(find.text('تجويد حفص'), findsWidgets);
+    expect(find.text('شامل'), findsOneWidget);
+    expect(find.text('شرح التجويد المصور'), findsOneWidget);
   });
 }
