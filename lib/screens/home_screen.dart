@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../data/book_reference.dart';
-import '../data/lessons.dart';
+import '../data/book_lessons.dart';
 import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
-import 'lessons_screen.dart';
+import 'book_lessons_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
 import 'surah_list_screen.dart';
@@ -175,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: ListTile(
                 onTap: () async {
                   await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LessonsScreen()),
+                    MaterialPageRoute(builder: (_) => const BookLessonsScreen()),
                   );
                   if (mounted) setState(() {});
                 },
@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 title: const Text('تعلّم التجويد',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(
-                  '${allLessons.length} درساً من «${BookReference.title}» - ${BookReference.authorShort}',
+                  '${allBookLessons.length} درساً من «${BookReference.title}» - ${BookReference.authorShort}',
                   style: const TextStyle(height: 1.6),
                 ),
                 trailing: const Icon(Icons.chevron_left),

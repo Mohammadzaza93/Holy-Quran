@@ -113,18 +113,18 @@ class StorageService {
   // ───────── الدروس (تعلّم التجويد) ─────────
 
   /// هل أنهى المستخدم الدرس؟
-  bool isLessonRead(String id) => _p.getBool('lesson_$id') ?? false;
+  bool isBookLessonRead(String id) => _p.getBool('book_lesson_$id') ?? false;
 
-  Future<void> setLessonRead(String id, bool value) async {
+  Future<void> setBookLessonRead(String id, bool value) async {
     if (value) {
-      await _p.setBool('lesson_$id', true);
+      await _p.setBool('book_lesson_$id', true);
     } else {
-      await _p.remove('lesson_$id');
+      await _p.remove('book_lesson_$id');
     }
   }
 
-  Future<void> resetLessons() async {
-    for (final k in _p.getKeys().where((k) => k.startsWith('lesson_')).toList()) {
+  Future<void> resetBookLessons() async {
+    for (final k in _p.getKeys().where((k) => k.startsWith('book_lesson_')).toList()) {
       await _p.remove(k);
     }
   }

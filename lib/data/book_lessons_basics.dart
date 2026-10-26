@@ -1,26 +1,26 @@
-import '../models/lesson.dart';
+import '../models/book_lesson.dart';
 import '../models/question.dart';
 
 /// الدروس (١): المدخل، المخارج، الصفات، النون والميم.
 /// مصدرها: «النور المبين في تجويد القرآن الكريم» للدكتور الشيخ أيمن رشدي سويد.
 /// صياغة الملخصات من وضع التطبيق، وأرقام الصفحات للكتاب المطبوع (الطبعة الخامسة).
-const List<Lesson> basicLessons = [
+const List<BookLesson> basicBookLessons = [
   // ───────────────────────── المدخل ─────────────────────────
-  Lesson(
+  BookLesson(
     id: 'l01',
     part: 'مدخل',
     title: 'القرآن الكريم وآداب التلاوة',
     summary: 'تعريف القرآن، وكيف وصل إلينا، والأحرف السبعة، وآداب القارئ.',
     pages: '٥–٧',
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'تعريف القرآن الكريم',
         body: [
           'القرآن كلام الله المعجز، المنزَّل على قلب نبيّنا محمد ﷺ، المتعبَّد بتلاوته، المنقول إلينا بالتواتر.',
           'والتواتر أن يرويه جمع يستحيل عقلاً اتفاقهم على الكذب، عن جمع مثلهم، حتى ينتهي إلى النبي ﷺ.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'كيف وصل القرآن إلينا؟',
         body: ['وصل بطريقين متكاملين: الكتابة، والمشافهة.'],
         points: [
@@ -28,13 +28,13 @@ const List<Lesson> basicLessons = [
           'المشافهة: تلقّاه القرّاء عن شيوخهم بالسند المتصل إلى النبي ﷺ، ولذلك لا يُستغنى عن المعلّم.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الأحرف السبعة والقراءات',
         body: [
           'نزل القرآن على سبعة أحرف تيسيراً على الأمة. والقراءات المتواترة (السبع والعشر) كلها داخلة في هذه الأحرف، ورواية حفص عن عاصم واحدة منها، وهي موضوع هذا التطبيق.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'آداب التلاوة',
         points: [
           'الطهارة، والجلوس بسكينة وخشوع واستقبال للقبلة.',
@@ -48,27 +48,27 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l02',
     part: 'مدخل',
     title: 'ما هو علم التجويد؟',
     summary: 'تعريفه وحكمه وموضوعه وثمرته ومباحثه.',
     pages: '٨',
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'التعريف',
         body: [
           'التجويد لغة: التحسين والإتقان.',
           'واصطلاحاً: إعطاء كل حرف حقَّه ومستحقَّه من المخرج والصفة، وكذلك الوقف والابتداء، من غير تكلّف، كما تلقّاه المسلمون عن النبي ﷺ.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الحكم',
         body: [
           'العلم بأحكام التجويد فرض كفاية، أما العمل به (أن يقرأ المسلم القرآن مجوَّداً) فهو فرض عين على كل مسلم ومسلمة.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'مبادئ العلم',
         points: [
           'موضوعه: الألفاظ القرآنية.',
@@ -78,7 +78,7 @@ const List<Lesson> basicLessons = [
           'ميزته: لا يؤخذ إلا بالمشافهة، ولا مجال فيه للرأي والاجتهاد.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'مباحثه',
         points: [
           'مخارج الحروف.',
@@ -91,14 +91,14 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l03',
     part: 'مدخل',
     title: 'الاستعاذة والبسملة',
     summary: 'معناهما وصيغتهما والأوجه الجائزة بين السورتين.',
     pages: '٩–١٠',
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'الاستعاذة',
         body: [
           'هي طلب الالتجاء إلى الله والعصمة به من الشيطان، امتثالاً لقوله تعالى: «فإذا قرأت القرآن فاستعذ بالله من الشيطان الرجيم». وليست من القرآن.',
@@ -109,14 +109,14 @@ const List<Lesson> basicLessons = [
           'ويُسَرّ بها في الصلاة، وعند القراءة منفرداً، وكذلك في «الدَّوْر» (القراءة الجماعية بالتناوب) لمن لم يكن هو المبتدئ.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'البسملة',
         body: [
           'تُقرأ في أول كل سورة سوى التوبة، وهي جزء من آية في سورة النمل.',
           'وإذا ابتدأ القارئ من وسط السورة فله أن يبسمل وله ألا يبسمل، وعليه أن يستعيذ.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الأوجه بين السورتين',
         body: ['بين آخر سورة وأول التي بعدها أربعة أوجه، ثلاثة منها جائزة وواحد ممنوع:'],
         points: [
@@ -126,7 +126,7 @@ const List<Lesson> basicLessons = [
           'ممنوع: وصل آخر السورة بالبسملة ثم قطع البسملة عن أول السورة التالية، لأن البسملة للابتداء لا للانتهاء.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'تنبيهات',
         points: [
           'عند البدء بأول السورة مع الاستعاذة تجوز أربعة أوجه، والقارئ مخيَّر فيها.',
@@ -135,7 +135,7 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l04',
     part: 'مدخل',
     title: 'اللحن ومراتب القراءة',
@@ -143,7 +143,7 @@ const List<Lesson> basicLessons = [
     pages: '١١',
     category: QuizCategory.misc,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'اللحن',
         body: ['اللحن هو الخطأ في التلاوة، وهو نوعان:'],
         points: [
@@ -151,7 +151,7 @@ const List<Lesson> basicLessons = [
           'اللحن الخفي: خطأ يخلّ بكمال الحرف دون أن يغيّر المعنى، كترك الغنة، أو تقصير المد، أو إظهار النون عند التاء. وهذا لا يُتقن إلا بالتلقي من معلّم.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'مراتب القراءة',
         points: [
           'التحقيق: قراءة بطيئة بتؤدة من غير تمطيط.',
@@ -164,7 +164,7 @@ const List<Lesson> basicLessons = [
   ),
 
   // ───────────────────── المخارج والصفات ─────────────────────
-  Lesson(
+  BookLesson(
     id: 'l05',
     part: 'المخارج والصفات',
     title: 'مخارج الحروف',
@@ -172,14 +172,14 @@ const List<Lesson> basicLessons = [
     pages: '١٢–١٧',
     category: QuizCategory.makharij,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'كيف يحدث الحرف؟',
         body: [
           'الحرف صوت يعتمد على مخرج معيّن. فالحرف الساكن (غير حروف المد واللين) يخرج بتلاقي عضوين، والمتحرك يخرج بتباعدهما. أما حروف المد واللين فلا تخرج بالتصادم بين عضوين، وإنما بجريان الهواء مع اهتزاز الحبال الصوتية.',
           'وطريقة معرفة مخرج الحرف: أسكِنه وأدخل عليه حرفاً متحركاً قبله، فحيث ينقطع الصوت فهو مخرجه.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'المخارج العامة والخاصة',
         body: ['المخارج العامة خمسة، وتتفرع إلى سبعة عشر مخرجاً خاصاً على المختار:'],
         points: [
@@ -190,7 +190,7 @@ const List<Lesson> basicLessons = [
           'الخيشوم: مخرج واحد.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الجوف والحلق',
         points: [
           'الجوف: الألف المدية بعد فتح، والواو المدية بعد ضم، والياء المدية بعد كسر.',
@@ -199,7 +199,7 @@ const List<Lesson> basicLessons = [
           'أدنى الحلق (مما يلي الفم): الغين والخاء.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'اللسان (١٨ حرفاً في عشرة مخارج)',
         points: [
           'أقصى اللسان مع ما يحاذيه من الحنك الأعلى: القاف، ثم الكاف أسفل منها قليلاً.',
@@ -213,7 +213,7 @@ const List<Lesson> basicLessons = [
           'الظاء والذال والثاء: طرف اللسان مع أطراف الثنايا العليا.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الشفتان والخيشوم',
         points: [
           'الفاء: بطن الشفة السفلى مع أطراف الثنايا العليا.',
@@ -223,7 +223,7 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l06',
     part: 'المخارج والصفات',
     title: 'الصفات المتضادة',
@@ -231,14 +231,14 @@ const List<Lesson> basicLessons = [
     pages: '١٨–٢٤ و٢٨',
     category: QuizCategory.sifat,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'ما الصفة؟',
         body: [
           'الصفة كيفية يتّصف بها الحرف عند النطق به، وتميّزه عن غيره من الحروف المشاركة له في المخرج.',
           'وهي نوعان: صفات لها أثر في الصوت، وهي المتضادة وغير المتضادة، وصفات ليس لها أثر صوتي وهي الإذلاق والإصمات.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الشدة والرخاوة والبينية',
         points: [
           'الشدة: انحباس جريان الصوت لانغلاق المخرج. حروفها: «أجد قط بكت».',
@@ -247,14 +247,14 @@ const List<Lesson> basicLessons = [
           'ثمرة ذلك عملياً: زمن الحرف الساكن الشديد أقصر، ثم البيني، ثم الرخو أطول.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الجهر والهمس',
         points: [
           'الهمس: خفاء الصوت لانفتاح الوترين الصوتيين وجريان النفَس. حروفه عشرة: «فحثّه شخص سكت».',
           'الجهر: وضوح الصوت لتضامّ الوترين وانحباس النفَس، وهو باقي الحروف.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الاستعلاء والاستفال',
         points: [
           'الاستعلاء: ارتفاع الصوت عند النطق بالحرف نحو الحنك الأعلى. حروفه سبعة: «خُصَّ ضغطٍ قِظْ».',
@@ -263,7 +263,7 @@ const List<Lesson> basicLessons = [
           'مراتب تفخيمها من الأقوى، على المذهب الثاني: المفتوحة بعدها ألف (قال)، ثم المفتوحة بلا ألف (قد)، ثم المضمومة (يقولوا)، ثم الساكنة (يقطعون)، ثم المكسورة (قيل).',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الإطباق والانفتاح',
         points: [
           'الإطباق: انطباق اللسان على الحنك الأعلى حتى ينحصر الصوت بينهما، وحروفه أربعة: ص ض ط ظ.',
@@ -271,7 +271,7 @@ const List<Lesson> basicLessons = [
           'الإطباق أقوى تفخيماً من مجرد الاستعلاء: فالغين والخاء والقاف مستعلية غير مطبقة.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الإذلاق والإصمات',
         body: [
           'الإذلاق: خفة الحرف لخروجه من طرف اللسان أو الشفة، وحروفه «فرّ من لُبّ». والإصمات: ما سواها.',
@@ -280,7 +280,7 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l07',
     part: 'المخارج والصفات',
     title: 'الصفات التي لا ضد لها',
@@ -288,19 +288,19 @@ const List<Lesson> basicLessons = [
     pages: '٢٨–٣١',
     category: QuizCategory.sifat,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'عدّها',
         body: [
           'ثماني صفات: الصفير، القلقلة، التكرير، التفشي، اللين، الاستطالة، الغنة، الانحراف.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الصفير',
         body: [
           'حدّة في الصوت تنشأ من مروره في مجرى ضيق، وحروفه الصاد والزاي والسين، ويشبه صوت الطائر. ومن الخطأ الشائع ضمّ الشفتين عند النطق بالصاد.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'القلقلة',
         body: [
           'حروفها خمسة: «قطب جد». وهي إخراج الحرف المقلقل حال سكونه بتباعد عضوي النطق دون أن تصاحبه شائبة حركة. وهي صفة عارضة للحرف حال سكونه. وسببها أن هذه الحروف شديدة تحبس الصوت، فيتخلّص القارئ من هذا الانحباس بتباعد العضوين.',
@@ -311,7 +311,7 @@ const List<Lesson> basicLessons = [
           'أخطاء شائعة: أن تُخلط القلقلة بحركة، أو يُلحق بالحرف صوت همزة، أو يُطال الحرف بالاتكاء عليه.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'بقية الصفات',
         points: [
           'اللين: الواو والياء الساكنتان المفتوح ما قبلهما، نحو: خَوْف، بَيْت.',
@@ -324,7 +324,7 @@ const List<Lesson> basicLessons = [
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l08',
     part: 'المخارج والصفات',
     title: 'التفخيم والترقيق وأحكام الراء',
@@ -332,7 +332,7 @@ const List<Lesson> basicLessons = [
     pages: '٢٤–٢٧',
     category: QuizCategory.misc,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'التفخيم والترقيق',
         body: [
           'التفخيم سِمَن يعتري الحرف فيمتلئ الفم بصداه. والترقيق نحول يعتري الحرف فلا يمتلئ الفم به.',
@@ -343,14 +343,14 @@ const List<Lesson> basicLessons = [
           'حروف مرققة دائماً: باقي الحروف.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الألف واللام',
         points: [
           'الألف لا تتصف بتفخيم ولا ترقيق بذاتها، بل تتبع ما قبلها: تفخّم بعد حرف مفخم (قالوا) وترقّق بعد حرف مرقق (الناس).',
           'لام لفظ الجلالة تفخَّم بعد فتح أو ضم (قال الله، يعلمه الله) وترقَّق بعد كسر (بسم الله، لله).',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'متى تفخَّم الراء؟ (ثماني حالات)',
         points: [
           'مفتوحة: رَمَضَان.',
@@ -363,7 +363,7 @@ const List<Lesson> basicLessons = [
           'ساكنة بعد كسرة أصلية وبعدها حرف استعلاء غير مكسور في كلمة واحدة: مِرْصَادًا، قِرْطَاس، فِرْقَة.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'متى ترقَّق الراء؟ (أربع حالات)',
         points: [
           'مكسورة: كَرِيم.',
@@ -372,18 +372,18 @@ const List<Lesson> basicLessons = [
           'ساكنة بعد ياء ساكنة قبلها مفتوح أو مكسور: خَيْر، قَدِير، لَا ضَيْر.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'الوجهان',
         body: [
           'يجوز التفخيم والترقيق في «فِرْقٍ» (الشعراء: ٦٣) وصلاً، أما وقفاً فالتفخيم قولاً واحداً. ويجوز الوجهان وقفاً في نحو «مِصْر» و«القِطْر»؛ أما وصلاً فـ«القِطْر» مرققة و«مِصْر» مفخمة قولاً واحداً.',
         ],
         examples: [
-          LessonExample('فَانفَلَقَ فَكَانَ كُلُّ فِرْقٍ كَالطَّوْدِ الْعَظِيمِ', 'موضع الوجهين وصلاً', surah: 26, ayah: 63),
+          BookLessonExample('فَانفَلَقَ فَكَانَ كُلُّ فِرْقٍ كَالطَّوْدِ الْعَظِيمِ', 'موضع الوجهين وصلاً', surah: 26, ayah: 63),
         ],
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l09',
     part: 'المخارج والصفات',
     title: 'التقاء الحروف ولام التعريف',
@@ -391,7 +391,7 @@ const List<Lesson> basicLessons = [
     pages: '٣٢–٣٥',
     category: QuizCategory.misc,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'أحوال التقاء الحرفين',
         points: [
           'المتماثلان: اتفقا مخرجاً وصفة (التاء مع التاء).',
@@ -403,7 +403,7 @@ const List<Lesson> basicLessons = [
           'القاعدة: التماثل والتجانس يوجبان الإدغام إذا سكن الأول، والتقارب موضع نظر، والتباعد يوجب الإظهار.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'مواضع الإدغام عند حفص',
         points: [
           'إدغام اللام الساكنة في الراء: قُل رَّبِّ، بَل رَّفَعَهُ.',
@@ -411,7 +411,7 @@ const List<Lesson> basicLessons = [
           'إدغام الطاء في التاء إدغاماً ناقصاً (تبقى صفة الإطباق، ولا تُقلقل): أَحَطتُ، بَسَطتَ، فَرَّطتُّم.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'لام التعريف',
         body: [
           'هي لام ساكنة تدخل على الأسماء، تسبقها همزة وصل مفتوحة (الأرض، الكتاب). وتقع قبل حروف الهجاء الثمانية والعشرين، وهي قسمان:',
@@ -421,15 +421,15 @@ const List<Lesson> basicLessons = [
           'لام قمرية (أربعة عشر حرفاً): تُظهر فيها اللام لبعد المخرج، وتجمعها: «ابغ حجك وخف عقيمه».',
         ],
         examples: [
-          LessonExample('الشَّمْسُ، الطُّورُ', 'أمثلة اللام الشمسية'),
-          LessonExample('الْقَمَرُ، الْحَجُّ', 'أمثلة اللام القمرية'),
+          BookLessonExample('الشَّمْسُ، الطُّورُ', 'أمثلة اللام الشمسية'),
+          BookLessonExample('الْقَمَرُ، الْحَجُّ', 'أمثلة اللام القمرية'),
         ],
       ),
     ],
   ),
 
   // ───────────────────── النون والميم ─────────────────────
-  Lesson(
+  BookLesson(
     id: 'l10',
     part: 'النون والميم',
     title: 'أحكام النون الساكنة والتنوين',
@@ -437,22 +437,22 @@ const List<Lesson> basicLessons = [
     pages: '٣٦–٤٠',
     category: QuizCategory.noon,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'تمهيد',
         body: [
           'التنوين نون ساكنة زائدة تلحق آخر الاسم لفظاً لا خطاً، ووصلاً لا وقفاً. وكل ما يقال في النون الساكنة ينطبق على التنوين.',
           'لهما أربعة أحكام: الإظهار، والإدغام، والقلب، والإخفاء.',
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: '١) الإظهار الحلقي',
         body: ['يُظهران عند ستة أحرف من الحلق: ء هـ ع ح غ خ، بلا غنة زائدة.'],
         examples: [
-          LessonExample('مَنْ آمَنَ', 'عند الهمزة', surah: 2, ayah: 62),
-          LessonExample('مِنْ خَوْفٍ', 'عند الخاء', surah: 106, ayah: 4),
+          BookLessonExample('مَنْ آمَنَ', 'عند الهمزة', surah: 2, ayah: 62),
+          BookLessonExample('مِنْ خَوْفٍ', 'عند الخاء', surah: 106, ayah: 4),
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: '٢) الإدغام',
         body: ['حروفه ستة تجمعها كلمة «يرملون». وهو قسمان:'],
         points: [
@@ -462,21 +462,21 @@ const List<Lesson> basicLessons = [
           'ويُظهر كذلك عند الواو في «يس والقرآن» و«ن والقلم» وصلاً.',
         ],
         examples: [
-          LessonExample('مَنْ يَقُولُ', 'إدغام بغنة', surah: 2, ayah: 8),
-          LessonExample('مِنْ وَالٍ', 'إدغام بغنة', surah: 13, ayah: 11),
+          BookLessonExample('مَنْ يَقُولُ', 'إدغام بغنة', surah: 2, ayah: 8),
+          BookLessonExample('مِنْ وَالٍ', 'إدغام بغنة', surah: 13, ayah: 11),
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: '٣) القلب',
         body: [
           'تُقلب النون الساكنة والتنوين ميماً مخفاة مع غنة إذا جاء بعدهما حرف الباء، وتُنطق بإطباق الشفتين على الميم دون ضغط.',
         ],
         examples: [
-          LessonExample('مِنْ بَعْدِ', 'قلب', surah: 2, ayah: 27),
-          LessonExample('سَمِيعًا بَصِيرًا', 'قلب', surah: 4, ayah: 58),
+          BookLessonExample('مِنْ بَعْدِ', 'قلب', surah: 2, ayah: 27),
+          BookLessonExample('سَمِيعًا بَصِيرًا', 'قلب', surah: 4, ayah: 58),
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: '٤) الإخفاء',
         body: [
           'هو النطق بالنون أو التنوين بحال بين الإظهار والإدغام، عارياً عن التشديد مع بقاء الغنة. وحروفه خمسة عشر، وهي ما عدا حروف الإظهار والإدغام والقلب: ص ذ ث ك ج ش ق س د ط ز ف ت ض ظ.',
@@ -487,12 +487,12 @@ const List<Lesson> basicLessons = [
           'يجب الإخفاء في أول سورة النمل وصلاً: «طس تِلْكَ آيَاتُ الْقُرْآنِ».',
         ],
         examples: [
-          LessonExample('مِنْ ثَمَرَةٍ', 'إخفاء عند الثاء', surah: 2, ayah: 25),
+          BookLessonExample('مِنْ ثَمَرَةٍ', 'إخفاء عند الثاء', surah: 2, ayah: 25),
         ],
       ),
     ],
   ),
-  Lesson(
+  BookLesson(
     id: 'l11',
     part: 'النون والميم',
     title: 'الميم الساكنة والغنن',
@@ -500,7 +500,7 @@ const List<Lesson> basicLessons = [
     pages: '٤١–٤٢',
     category: QuizCategory.meem,
     sections: [
-      LessonSection(
+      BookLessonSection(
         heading: 'أحكام الميم الساكنة',
         body: ['للميم الساكنة ثلاثة أحكام:'],
         points: [
@@ -509,11 +509,11 @@ const List<Lesson> basicLessons = [
           'الإظهار الشفوي: عند باقي الحروف، ويجب الحذر من إخفائها عند الواو والفاء: عَلَيْهِمْ وَلَا، هُمْ فِيهَا.',
         ],
         examples: [
-          LessonExample('تَرْمِيهِم بِحِجَارَةٍ', 'إخفاء شفوي', surah: 105, ayah: 4),
-          LessonExample('هُمْ فِيهَا خَالِدُونَ', 'إظهار شفوي عند الفاء', surah: 2, ayah: 25),
+          BookLessonExample('تَرْمِيهِم بِحِجَارَةٍ', 'إخفاء شفوي', surah: 105, ayah: 4),
+          BookLessonExample('هُمْ فِيهَا خَالِدُونَ', 'إظهار شفوي عند الفاء', surah: 2, ayah: 25),
         ],
       ),
-      LessonSection(
+      BookLessonSection(
         heading: 'مراتب الغنة (من الأكمل إلى الأنقص)',
         points: [
           'أكمل الغنة: في النون والميم المشددتين والمدغمتين بغنة (الجنّة، إنّ، ثمّ، مَن يقول).',

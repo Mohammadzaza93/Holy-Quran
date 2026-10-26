@@ -257,7 +257,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة وتقدمك في الدروس.', () async {
                       await StorageService.instance.resetProgress();
                       await StorageService.instance.resetReading();
-                      await StorageService.instance.resetLessons();
+                      await StorageService.instance.resetBookLessons();
                       if (mounted) _snack('تم مسح التقدم');
                     }),
             icon: const Icon(Icons.delete_outline),

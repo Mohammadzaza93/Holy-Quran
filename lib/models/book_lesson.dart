@@ -1,8 +1,8 @@
 import '../models/question.dart';
 
 /// مثال قرآني يرد في الدرس (اختياري الموضع).
-class LessonExample {
-  const LessonExample(this.phrase, this.note, {this.surah, this.ayah});
+class BookLessonExample {
+  const BookLessonExample(this.phrase, this.note, {this.surah, this.ayah});
 
   final String phrase;
   final String note;
@@ -11,8 +11,8 @@ class LessonExample {
 }
 
 /// فقرة داخل الدرس: عنوان + نص + نقاط + أمثلة + اقتباس (من متن الجزرية مثلاً).
-class LessonSection {
-  const LessonSection({
+class BookLessonSection {
+  const BookLessonSection({
     required this.heading,
     this.body = const [],
     this.points = const [],
@@ -24,13 +24,13 @@ class LessonSection {
   final String heading;
   final List<String> body;
   final List<String> points;
-  final List<LessonExample> examples;
+  final List<BookLessonExample> examples;
   final String? quote;
   final String? quoteSource;
 }
 
-class Lesson {
-  const Lesson({
+class BookLesson {
+  const BookLesson({
     required this.id,
     required this.part,
     required this.title,
@@ -49,7 +49,7 @@ class Lesson {
 
   /// أرقام صفحات الكتاب المطبوع التي أُخذ منها الدرس، مثل: ٤٣–٤٦
   final String pages;
-  final List<LessonSection> sections;
+  final List<BookLessonSection> sections;
 
   /// قسم الأسئلة المرتبط بالدرس (لزر «اختبرني في هذا الدرس»)
   final QuizCategory? category;

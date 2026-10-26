@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tajweed_quiz/data/lessons.dart';
+import 'package:tajweed_quiz/data/book_lessons.dart';
 import 'package:tajweed_quiz/data/surahs.dart';
 
 void main() {
   test('معرّفات الدروس فريدة ومرتبة', () {
-    final ids = allLessons.map((l) => l.id).toList();
+    final ids = allBookLessons.map((l) => l.id).toList();
     expect(ids.toSet().length, ids.length);
-    expect(allLessons, isNotEmpty);
+    expect(allBookLessons, isNotEmpty);
   });
 
   test('كل درس له عنوان وملخص وصفحات وأقسام غير فارغة', () {
-    for (final l in allLessons) {
+    for (final l in allBookLessons) {
       expect(l.title.trim(), isNotEmpty, reason: l.id);
       expect(l.summary.trim(), isNotEmpty, reason: l.id);
       expect(l.pages.trim(), isNotEmpty, reason: l.id);
@@ -25,7 +25,7 @@ void main() {
   });
 
   test('مراجع الآيات في الأمثلة صحيحة', () {
-    for (final l in allLessons) {
+    for (final l in allBookLessons) {
       for (final s in l.sections) {
         for (final e in s.examples) {
           expect((e.surah == null) == (e.ayah == null), isTrue,
@@ -41,7 +41,7 @@ void main() {
   });
 
   test('لا تتضمن الدروس أبياتاً من المتون (الاقتباسات أحاديث فقط)', () {
-    for (final l in allLessons) {
+    for (final l in allBookLessons) {
       for (final s in l.sections) {
         if (s.quote == null) continue;
         expect(s.quoteSource ?? '', contains('حديث'), reason: '${l.id}: ${s.heading}');
@@ -51,7 +51,7 @@ void main() {
 
   test('كل درس يحمل نطاق صفحات من الكتاب', () {
     final digits = RegExp('[٠-٩]');
-    for (final l in allLessons) {
+    for (final l in allBookLessons) {
       expect(digits.hasMatch(l.pages), isTrue, reason: '${l.id}: ${l.pages}');
     }
   });

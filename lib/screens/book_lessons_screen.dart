@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../data/book_reference.dart';
-import '../data/lessons.dart';
+import '../data/book_lessons.dart';
 import '../services/storage_service.dart';
-import 'lesson_screen.dart';
+import 'book_lesson_screen.dart';
 import 'reference_screen.dart';
 
 /// قائمة دروس «تعلّم التجويد» المبنية على كتاب النور المبين للدكتور أيمن رشدي سويد.
-class LessonsScreen extends StatefulWidget {
-  const LessonsScreen({super.key});
+class BookLessonsScreen extends StatefulWidget {
+  const BookLessonsScreen({super.key});
 
   @override
-  State<LessonsScreen> createState() => _LessonsScreenState();
+  State<BookLessonsScreen> createState() => _BookLessonsScreenState();
 }
 
-class _LessonsScreenState extends State<LessonsScreen> {
+class _BookLessonsScreenState extends State<BookLessonsScreen> {
   Future<void> _open(int index) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LessonScreen(index: index)),
+      MaterialPageRoute(builder: (_) => BookLessonScreen(index: index)),
     );
     if (mounted) setState(() {});
   }
@@ -30,8 +30,8 @@ class _LessonsScreenState extends State<LessonsScreen> {
   Widget build(BuildContext context) {
     final store = StorageService.instance;
     final scheme = Theme.of(context).colorScheme;
-    final total = allLessons.length;
-    final done = allLessons.where((l) => store.isLessonRead(l.id)).length;
+    final total = allBookLessons.length;
+    final done = allBookLessons.where((l) => store.isBookLessonRead(l.id)).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -83,7 +83,7 @@ class _LessonsScreenState extends State<LessonsScreen> {
               ),
             ),
           ),
-          for (final part in lessonParts()) ...[
+          for (final part in bookLessonParts()) ...[
             Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 6),
               child: Text(
@@ -91,8 +91,8 @@ class _LessonsScreenState extends State<LessonsScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: scheme.primary),
               ),
             ),
-            for (var i = 0; i < allLessons.length; i++)
-              if (allLessons[i].part == part) _lessonTile(i, store, scheme),
+            for (var i = 0; i < allBookLessons.length; i++)
+              if (allBookLessons[i].part == part) _lessonTile(i, store, scheme),
           ],
           const SizedBox(height: 16),
           const Text(
@@ -106,8 +106,8 @@ class _LessonsScreenState extends State<LessonsScreen> {
   }
 
   Widget _lessonTile(int index, StorageService store, ColorScheme scheme) {
-    final lesson = allLessons[index];
-    final read = store.isLessonRead(lesson.id);
+    final lesson = allBookLessons[index];
+    final read = store.isBookLessonRead(lesson.id);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(

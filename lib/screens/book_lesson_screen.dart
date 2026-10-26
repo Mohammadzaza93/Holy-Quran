@@ -3,40 +3,40 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../data/book_reference.dart';
-import '../data/lessons.dart';
+import '../data/book_lessons.dart';
 import '../data/surahs.dart';
-import '../models/lesson.dart';
+import '../models/book_lesson.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
 import 'quiz_screen.dart';
 import 'reference_screen.dart';
 
 /// عرض درس واحد، مع ذكر المرجع وأرقام الصفحات، وأزرار للتنقل والاختبار.
-class LessonScreen extends StatefulWidget {
-  const LessonScreen({super.key, required this.index});
+class BookLessonScreen extends StatefulWidget {
+  const BookLessonScreen({super.key, required this.index});
 
-  /// ترتيب الدرس داخل [allLessons]
+  /// ترتيب الدرس داخل [allBookLessons]
   final int index;
 
   @override
-  State<LessonScreen> createState() => _LessonScreenState();
+  State<BookLessonScreen> createState() => _BookLessonScreenState();
 }
 
-class _LessonScreenState extends State<LessonScreen> {
-  Lesson get _lesson => allLessons[widget.index];
+class _BookLessonScreenState extends State<BookLessonScreen> {
+  BookLesson get _lesson => allBookLessons[widget.index];
   bool get _hasPrev => widget.index > 0;
-  bool get _hasNext => widget.index < allLessons.length - 1;
+  bool get _hasNext => widget.index < allBookLessons.length - 1;
 
-  bool get _read => StorageService.instance.isLessonRead(_lesson.id);
+  bool get _read => StorageService.instance.isBookLessonRead(_lesson.id);
 
   Future<void> _toggleRead() async {
-    await StorageService.instance.setLessonRead(_lesson.id, !_read);
+    await StorageService.instance.setBookLessonRead(_lesson.id, !_read);
     if (mounted) setState(() {});
   }
 
   void _go(int delta) {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => LessonScreen(index: widget.index + delta)),
+      MaterialPageRoute(builder: (_) => BookLessonScreen(index: widget.index + delta)),
     );
   }
 
@@ -60,7 +60,7 @@ class _LessonScreenState extends State<LessonScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('الدرس ${widget.index + 1} من ${allLessons.length}'),
+        title: Text('الدرس ${widget.index + 1} من ${allBookLessons.length}'),
         actions: [
           IconButton(
             tooltip: 'عن المرجع',
@@ -140,7 +140,7 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
-  Widget _referenceFooter(Lesson lesson, ColorScheme scheme) {
+  Widget _referenceFooter(BookLesson lesson, ColorScheme scheme) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -164,7 +164,7 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
-  Widget _section(LessonSection s, ColorScheme scheme) {
+  Widget _section(BookLessonSection s, ColorScheme scheme) {
     return Padding(
       padding: const EdgeInsets.only(top: 20),
       child: Column(
@@ -203,7 +203,7 @@ class _LessonScreenState extends State<LessonScreen> {
     );
   }
 
-  Widget _example(LessonExample e, ColorScheme scheme) {
+  Widget _example(BookLessonExample e, ColorScheme scheme) {
     final hasRef = e.surah != null && e.ayah != null;
     return Container(
       margin: const EdgeInsets.only(top: 6, bottom: 4),
