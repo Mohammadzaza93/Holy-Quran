@@ -1,13 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/question.dart';
-import 'lesson_test.dart';
 import 'spaced_repetition.dart';
 
-/// تخزين محلي (يعمل دون اتصال): التقدم، الأخطاء، الإعدادات، الأسئلة المحمّلة، نصوص الآيات، تقدم الدروس.
-class StorageService {
+/// تخزين محلي مع إشعار المستمعين عند تغيّر البيانات (لتجنب setState الجذري بلا داعٍ).
+class StorageService extends ChangeNotifier {
   StorageService._(this._p);
 
   final SharedPreferences _p;
@@ -16,6 +16,8 @@ class StorageService {
   static Future<void> init() async {
     instance = StorageService._(await SharedPreferences.getInstance());
   }
+
+  void _notify() => notifyListeners();
 
   // ───────── التقدم ─────────
   int answered(QuizCategory c) => _p.getInt('ans_${c.name}') ?? 0;
@@ -45,6 +47,7 @@ class StorageService {
     }
     await _p.setStringList('wrong_ids', wrong.toList());
     await _srsUpdate(q.id, isCorrect);
+    _notify();
   }
 
   // ───────── التكرار المتباعد ─────────
@@ -68,15 +71,20 @@ class StorageService {
 
   Future<void> _srsUpdate(String id, bool correct) async {
     final next = SpacedRepetition.update(
-        srsEntries, id, correct, SpacedRepetition.dayNumber(DateTime.now()));
-    await _p.setString(_srsKey, jsonEncode(next.map((k, v) => MapEntry(k, v.toJson()))));
+      srsEntries,
+      id,
+      correct,
+      SpacedRepetition.dayNumber(DateTime.now()),
+    );
+    await _p.setString(
+      _srsKey,
+      jsonEncode(next.map((k, v) => MapEntry(k, v.toJson()))),
+    );
   }
 
-  /// الأسئلة المستحقة للمراجعة اليوم (بحسب الجدولة).
   Set<String> get dueIds =>
       SpacedRepetition.dueIds(srsEntries, SpacedRepetition.dayNumber(DateTime.now()));
 
-  /// عدد الأسئلة المجدولة (مستحقة وغير مستحقة بعد).
   int get scheduledCount => srsEntries.length;
 
   Set<String> get wrongIds => (_p.getStringList('wrong_ids') ?? <String>[]).toSet();
@@ -88,13 +96,13 @@ class StorageService {
     }
     await _p.remove('wrong_ids');
     await _p.remove(_srsKey);
+    _notify();
   }
 
-  // ───────── تقدم قراءة الدروس ─────────
+  // ───────── تقدم حلقات يوتيوب ─────────
 
   static const _lessonReadKey = 'lesson_read_ids';
 
-  /// مجموعة معرّفات الدروس التي قرأها المستخدم
   Set<String> get readLessonIds =>
       (_p.getStringList(_lessonReadKey) ?? <String>[]).toSet();
 
@@ -105,36 +113,43 @@ class StorageService {
     if (ids.contains(lessonId)) return;
     ids.add(lessonId);
     await _p.setStringList(_lessonReadKey, ids.toList());
+    _notify();
   }
 
   Future<void> markLessonUnread(String lessonId) async {
     final ids = readLessonIds;
     if (!ids.remove(lessonId)) return;
     await _p.setStringList(_lessonReadKey, ids.toList());
+    _notify();
   }
 
   int get readLessonsCount => readLessonIds.length;
 
   Future<void> resetLessonProgress() async {
     await _p.remove(_lessonReadKey);
+    _notify();
   }
 
   // ───────── الإعدادات ─────────
   static const defaultReciter = 'Alafasy_128kbps';
 
   String get reciter => _p.getString('reciter') ?? defaultReciter;
-  Future<void> setReciter(String v) => _p.setString('reciter', v);
+  Future<void> setReciter(String v) async {
+    await _p.setString('reciter', v);
+    _notify();
+  }
 
   String get remoteUrl => _p.getString('remote_url') ?? '';
   Future<void> setRemoteUrl(String v) => _p.setString('remote_url', v);
 
+  bool get onDeviceSpeech => _p.getBool('speech_on_device') ?? false;
+  Future<void> setOnDeviceSpeech(bool v) async {
+    await _p.setBool('speech_on_device', v);
+    _notify();
+  }
+
   // ───────── القراءة والتصحيح الصوتي ─────────
 
-  /// استخدام التعرف الصوتي على الجهاز (قد يعمل دون إنترنت إن توفرت حزمة اللغة العربية)
-  bool get onDeviceSpeech => _p.getBool('speech_on_device') ?? false;
-  Future<void> setOnDeviceSpeech(bool v) => _p.setBool('speech_on_device', v);
-
-  /// أفضل نتيجة (0..1) حققها المستخدم في آية، أو null إن لم يقرأها
   double? ayahBestScore(int surah, int ayah) => _p.getDouble('read_$surah:$ayah');
 
   Future<void> saveAyahScore(int surah, int ayah, double score) async {
@@ -143,11 +158,11 @@ class StorageService {
       await _p.setDouble('read_$surah:$ayah', score);
     }
     await _p.setInt('read_attempts', readAttempts + 1);
+    _notify();
   }
 
   int get readAttempts => _p.getInt('read_attempts') ?? 0;
 
-  /// عدد آيات السورة التي أتقنها المستخدم (نتيجة 90% فأكثر)
   int masteredAyat(int surah, int ayahCount) {
     var n = 0;
     for (var a = 1; a <= ayahCount; a++) {
@@ -156,7 +171,6 @@ class StorageService {
     return n;
   }
 
-  /// آخر موضع قراءة (سورة، آية) لاستئناف القراءة
   (int, int)? get lastPosition {
     final raw = _p.getString('last_pos');
     if (raw == null) return null;
@@ -167,64 +181,54 @@ class StorageService {
     return (s == null || a == null) ? null : (s, a);
   }
 
-  Future<void> saveLastPosition(int surah, int ayah) => _p.setString('last_pos', '$surah:$ayah');
+  Future<void> saveLastPosition(int surah, int ayah) =>
+      _p.setString('last_pos', '$surah:$ayah');
 
   Future<void> resetReading() async {
     for (final k in _p.getKeys().where((k) => k.startsWith('read_') || k == 'last_pos').toList()) {
       await _p.remove(k);
     }
-  }
-
-  // ───────── الدروس (تعلّم التجويد) ─────────
-
-  /// هل أنهى المستخدم الدرس؟
-  bool isBookLessonRead(String id) => _p.getBool('book_lesson_$id') ?? false;
-
-  Future<void> setBookLessonRead(String id, bool value) async {
-    if (value) {
-      await _p.setBool('book_lesson_$id', true);
-    } else {
-      await _p.remove('book_lesson_$id');
-    }
-  }
-
-  // اختبارات الدروس القبلية والبعدية (تُمسح مع تقدم دروس الكتاب لأن المفتاح يبدأ بـ book_lesson_)
-  LessonTestResult? lessonTest(String lessonId, {required bool pre}) =>
-      LessonTestResult.decode(_p.getString('book_lesson_test_${pre ? 'pre' : 'post'}_$lessonId'));
-
-  List<String> lessonTestIds(String lessonId) =>
-      _p.getStringList('book_lesson_test_ids_$lessonId') ?? <String>[];
-
-  Future<void> saveLessonTest(String lessonId,
-      {required bool pre, required int score, required int total, List<String> ids = const []}) async {
-    await _p.setString('book_lesson_test_${pre ? 'pre' : 'post'}_$lessonId',
-        LessonTestResult(score, total).encode());
-    if (pre) await _p.setStringList('book_lesson_test_ids_$lessonId', ids);
-  }
-
-  Future<void> resetBookLessons() async {
-    for (final k in _p.getKeys().where((k) => k.startsWith('book_lesson_')).toList()) {
-      await _p.remove(k);
-    }
+    _notify();
   }
 
   // ───────── حزمة الأسئلة المحمّلة من الإنترنت ─────────
+  List<Question>? _remoteCache;
+
   List<Question> remoteQuestions() {
+    if (_remoteCache != null) return _remoteCache!;
     final raw = _p.getString('remote_pack');
-    if (raw == null || raw.isEmpty) return const [];
+    if (raw == null || raw.isEmpty) {
+      _remoteCache = const [];
+      return _remoteCache!;
+    }
     try {
       final data = jsonDecode(raw);
-      if (data is! List) return const [];
-      return data.map(Question.tryParse).whereType<Question>().toList();
+      if (data is! List) {
+        _remoteCache = const [];
+        return _remoteCache!;
+      }
+      _remoteCache = data.map(Question.tryParse).whereType<Question>().toList(growable: false);
+      return _remoteCache!;
     } catch (_) {
-      return const [];
+      _remoteCache = const [];
+      return _remoteCache!;
     }
   }
 
-  Future<void> saveRemoteQuestions(List<Question> questions) =>
-      _p.setString('remote_pack', jsonEncode(questions.map((q) => q.toJson()).toList()));
+  Future<void> saveRemoteQuestions(List<Question> questions) async {
+    await _p.setString(
+      'remote_pack',
+      jsonEncode(questions.map((q) => q.toJson()).toList()),
+    );
+    _remoteCache = List.unmodifiable(questions);
+    _notify();
+  }
 
-  Future<void> clearRemoteQuestions() => _p.remove('remote_pack');
+  Future<void> clearRemoteQuestions() async {
+    await _p.remove('remote_pack');
+    _remoteCache = const [];
+    _notify();
+  }
 
   // ───────── نصوص الآيات المخزنة ─────────
   String? cachedAyah(int surah, int ayah) => _p.getString('ayah_$surah:$ayah');
