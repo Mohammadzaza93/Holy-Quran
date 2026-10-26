@@ -16,6 +16,7 @@ dependencies:
   path_provider: ^2.1.4
   audioplayers: ^6.1.0
   speech_to_text: ^7.0.0
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -24,9 +25,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # لتحسين عرض الآيات يمكنك إضافة خط قرآني (مثل Amiri Quran) داخل assets/fonts
-  # ثم فك التعليق عن الأسطر التالية وتعيين fontFamily في lib/widgets/ayah_card.dart
-  # fonts:
-  #   - family: AmiriQuran
-  #     fonts:
-  #       - asset: assets/fonts/AmiriQuran-Regular.ttf
+  fonts:
+    # خط Amiri Quran (رخصة SIL OFL 1.1 - انظر assets/fonts/OFL.txt) لعرض الآيات
+    - family: AmiriQuran
+      fonts:
+        - asset: assets/fonts/AmiriQuran-Regular.ttf

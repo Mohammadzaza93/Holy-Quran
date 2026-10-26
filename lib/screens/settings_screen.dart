@@ -5,6 +5,7 @@ import '../services/mushaf_service.dart';
 import '../services/question_repository.dart';
 import '../services/quran_service.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -44,7 +45,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _snack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   Future<bool> _requireOnline() async {
@@ -107,7 +114,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     setState(() {
       _busy = false;
-      _status = error ?? 'تم التحديث: ${QuestionRepository.remoteCount} سؤالاً إضافياً محفوظة للعمل دون اتصال';
+      _status = error ??
+          'تم التحديث: ${QuestionRepository.remoteCount} سؤالاً إضافياً محفوظة للعمل دون اتصال';
     });
   }
 
@@ -115,8 +123,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final yes = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(title),
-        content: Text(body),
+        content: Text(body, style: const TextStyle(height: 1.6)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
           FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('تأكيد')),
@@ -129,163 +138,304 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final readLessons = StorageService.instance.readLessonsCount;
+    final remoteCount = QuestionRepository.remoteCount;
 
     return Scaffold(
       appBar: AppBar(title: const Text('الإعدادات')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
-          const _SectionTitle('القارئ'),
-          DropdownButton<String>(
-            isExpanded: true,
-            value: _reciter,
-            items: [
-              for (final e in reciters.entries)
-                DropdownMenuItem(value: e.key, child: Text(e.value)),
-            ],
-            onChanged: (v) async {
-              if (v == null) return;
-              await StorageService.instance.setReciter(v);
-              setState(() => _reciter = v);
-              await _refreshSize();
-            },
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 4, bottom: 8),
-            child: Text(
-              'جميع القراء المدرجين يقرؤون برواية حفص عن عاصم. الصوتيات المحمّلة مسبقاً مرتبطة بالقارئ المختار.',
-              style: TextStyle(fontSize: 13, height: 1.6),
-            ),
-          ),
-          const Divider(height: 28),
-          const _SectionTitle('العمل دون اتصال'),
-          const Text(
-            'البنك المدمج يعمل دائماً دون إنترنت. اضغط الزر لتحميل نصوص الآيات وتلاواتها الخاصة بالأمثلة، لتسمعها وتراها دون اتصال.',
-            style: TextStyle(height: 1.7),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.icon(
-            onPressed: _busy ? null : _downloadForOffline,
-            icon: const Icon(Icons.download),
-            label: const Text('تحميل الآيات والصوتيات للعمل دون اتصال'),
-          ),
-          if (_progress != null) ...[
-            const SizedBox(height: 10),
-            LinearProgressIndicator(value: _progress),
-          ],
-          const SizedBox(height: 6),
-          Text('الصوتيات المحمّلة: ${_audioMb.toStringAsFixed(1)} م.ب', style: const TextStyle(fontSize: 13)),
-          if (_audioMb > 0)
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => _confirm('حذف الصوتيات', 'سيتم حذف ملفات الصوت المحمّلة من الجهاز.', () async {
-                          await QuranService.deleteDownloadedAudio();
-                          await _refreshSize();
-                        }),
-                child: const Text('حذف الصوتيات المحمّلة'),
-              ),
-            ),
-          const Divider(height: 28),
-          const _SectionTitle('القراءة والتصحيح الصوتي'),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _onDevice,
-            onChanged: (v) async {
-              await StorageService.instance.setOnDeviceSpeech(v);
-              setState(() => _onDevice = v);
-            },
-            title: const Text('التعرف على الجهاز (دون إنترنت)'),
-            subtitle: const Text(
-              'يعمل إن كانت حزمة اللغة العربية للتعرف الصوتي محمّلة على جهازك، وإلا فأوقفه ليستخدم الإنترنت.',
-            ),
-          ),
-          const SizedBox(height: 6),
-          FilledButton.tonalIcon(
-            onPressed: _busy ? null : _downloadSurahs,
-            icon: const Icon(Icons.menu_book),
-            label: const Text('حفظ نص المصحف كاملاً للقراءة دون اتصال'),
-          ),
-          const Divider(height: 28),
-          const _SectionTitle('تحديث الأسئلة من الإنترنت'),
-          const Text(
-            'يمكنك إضافة أسئلة جديدة من ملف JSON على رابط https (مثلاً من GitHub). تُحفظ الأسئلة محلياً وتعمل بعدها دون اتصال.',
-            style: TextStyle(height: 1.7),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _urlController,
-            keyboardType: TextInputType.url,
-            textDirection: TextDirection.ltr,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'https://example.com/questions.json',
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  onPressed: _busy ? null : _updateQuestions,
-                  icon: const Icon(Icons.sync),
-                  label: const Text('تحديث الأسئلة'),
+          // ─── القارئ ───
+          _SettingsCard(
+            icon: Icons.record_voice_over_rounded,
+            title: 'القارئ',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'اختر صوت التلاوة المرجعية (رواية حفص عن عاصم)',
+                  style: TextStyle(color: AppColors.muted, height: 1.5, fontSize: 13),
                 ),
-              ),
-              const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: _busy || QuestionRepository.remoteCount == 0
-                    ? null
-                    : () => _confirm('إزالة الأسئلة الإضافية', 'ستعود للبنك المدمج فقط.', () async {
-                          await StorageService.instance.clearRemoteQuestions();
-                          if (mounted) setState(() => _status = 'أُزيلت الأسئلة الإضافية');
-                        }),
-                child: Text('إزالة (${QuestionRepository.remoteCount})'),
-              ),
-            ],
-          ),
-          if (_status != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(_status!, style: const TextStyle(height: 1.6)),
-            ),
-          const Divider(height: 28),
-          const _SectionTitle('البيانات'),
-          OutlinedButton.icon(
-            onPressed: _busy
-                ? null
-                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة.', () async {
-                      await StorageService.instance.resetProgress();
-                      await StorageService.instance.resetReading();
-                      if (mounted) _snack('تم مسح التقدم');
-                    }),
-            icon: const Icon(Icons.delete_outline),
-            label: const Text('مسح التقدم وسجل الأخطاء'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _busy || readLessons == 0
-                ? null
-                : () => _confirm(
-                      'مسح تقدم الدروس',
-                      'سيتم إلغاء تعليم جميع الدروس كمقروءة ($readLessons درسًا).',
-                      () async {
-                        await StorageService.instance.resetLessonProgress();
-                        if (mounted) {
-                          setState(() {});
-                          _snack('تم مسح تقدم قراءة الدروس');
-                        }
-                      },
+                const SizedBox(height: 12),
+                InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'القارئ الحالي',
+                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: _reciter,
+                      borderRadius: BorderRadius.circular(14),
+                      items: [
+                        for (final e in reciters.entries)
+                          DropdownMenuItem(
+                            value: e.key,
+                            child: Text(e.value, style: const TextStyle(fontSize: 14)),
+                          ),
+                      ],
+                      onChanged: _busy
+                          ? null
+                          : (v) async {
+                              if (v == null) return;
+                              await StorageService.instance.setReciter(v);
+                              setState(() => _reciter = v);
+                              await _refreshSize();
+                            },
                     ),
-            icon: const Icon(Icons.menu_book_outlined),
-            label: Text('مسح تقدم الدروس ($readLessons)'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'الصوتيات المحمّلة مرتبطة بالقارئ المختار.',
+                  style: TextStyle(color: AppColors.muted.withValues(alpha: 0.9), fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          const Text(
-            'تنبيه: هذا التطبيق وسيلة مساعدة للمراجعة، ولا يغني عن التلقي والمشافهة على مقرئ متقن بالسند.',
-            style: TextStyle(fontSize: 13, height: 1.7, color: Colors.black54),
+          const SizedBox(height: 12),
+
+          // ─── دون اتصال ───
+          _SettingsCard(
+            icon: Icons.cloud_download_rounded,
+            title: 'العمل دون اتصال',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'البنك المدمج يعمل دائماً بدون إنترنت. حمّل الآيات والتلاوات لتسمع الأمثلة دون اتصال.',
+                  style: TextStyle(color: AppColors.muted, height: 1.55, fontSize: 13),
+                ),
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  onPressed: _busy ? null : _downloadForOffline,
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('تحميل الآيات والصوتيات'),
+                ),
+                if (_progress != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(value: _progress, minHeight: 8),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F4F2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.folder_rounded, size: 20, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'الصوتيات المحمّلة: ${_audioMb.toStringAsFixed(1)} م.ب',
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+                      if (_audioMb > 0)
+                        TextButton(
+                          onPressed: _busy
+                              ? null
+                              : () => _confirm(
+                                    'حذف الصوتيات',
+                                    'سيتم حذف ملفات الصوت المحمّلة من الجهاز.',
+                                    () async {
+                                      await QuranService.deleteDownloadedAudio();
+                                      await _refreshSize();
+                                      if (mounted) _snack('تم حذف الصوتيات');
+                                    },
+                                  ),
+                          child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ─── القراءة والتصحيح ───
+          _SettingsCard(
+            icon: Icons.mic_rounded,
+            title: 'القراءة والتصحيح',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _onDevice,
+                  onChanged: _busy
+                      ? null
+                      : (v) async {
+                          await StorageService.instance.setOnDeviceSpeech(v);
+                          setState(() => _onDevice = v);
+                        },
+                  title: const Text('التعرف على الجهاز', style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text(
+                    'يعمل دون إنترنت إن كانت حزمة العربية محمّلة على الجهاز',
+                    style: TextStyle(height: 1.4, fontSize: 12.5),
+                  ),
+                  activeThumbColor: AppColors.primary,
+                ),
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                  onPressed: _busy ? null : _downloadSurahs,
+                  icon: const Icon(Icons.menu_book_rounded),
+                  label: const Text('حفظ نص المصحف كاملاً'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ─── تحديث الأسئلة ───
+          _SettingsCard(
+            icon: Icons.sync_rounded,
+            title: 'تحديث الأسئلة',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'أضف أسئلة من ملف JSON على رابط https (مثل GitHub). تُحفظ محلياً وتعمل دون اتصال.',
+                  style: TextStyle(color: AppColors.muted, height: 1.55, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _urlController,
+                  enabled: !_busy,
+                  keyboardType: TextInputType.url,
+                  textDirection: TextDirection.ltr,
+                  decoration: const InputDecoration(
+                    hintText: 'https://example.com/questions.json',
+                    prefixIcon: Icon(Icons.link_rounded),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: _busy ? null : _updateQuestions,
+                        icon: const Icon(Icons.cloud_sync_rounded),
+                        label: const Text('تحديث'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton(
+                      onPressed: _busy || remoteCount == 0
+                          ? null
+                          : () => _confirm(
+                                'إزالة الأسئلة الإضافية',
+                                'ستعود للبنك المدمج فقط.',
+                                () async {
+                                  await StorageService.instance.clearRemoteQuestions();
+                                  if (mounted) {
+                                    setState(() => _status = 'أُزيلت الأسئلة الإضافية');
+                                  }
+                                },
+                              ),
+                      child: Text('إزالة ($remoteCount)'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          if (_status != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5EF),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(_status!, style: const TextStyle(height: 1.55, fontSize: 13.5)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // ─── البيانات ───
+          _SettingsCard(
+            icon: Icons.storage_rounded,
+            title: 'البيانات',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () => _confirm(
+                            'مسح التقدم',
+                            'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة.',
+                            () async {
+                              await StorageService.instance.resetProgress();
+                              await StorageService.instance.resetReading();
+                              if (mounted) _snack('تم مسح التقدم');
+                            },
+                          ),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text('مسح التقدم وسجل الأخطاء'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: _busy || readLessons == 0
+                      ? null
+                      : () => _confirm(
+                            'مسح تقدم الحلقات',
+                            'سيتم إلغاء تعليم حلقات يوتيوب كمقروءة ($readLessons).',
+                            () async {
+                              await StorageService.instance.resetLessonProgress();
+                              if (mounted) {
+                                setState(() {});
+                                _snack('تم مسح تقدم الحلقات');
+                              }
+                            },
+                          ),
+                  icon: const Icon(Icons.play_circle_outline_rounded),
+                  label: Text('مسح تقدم حلقات يوتيوب ($readLessons)'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.goldSoft,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.school_rounded, color: Color(0xFF8B6914), size: 22),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'هذا التطبيق وسيلة مساعدة للمراجعة، ولا يغني عن التلقي والمشافهة على مقرئ متقن بالسند.',
+                    style: TextStyle(fontSize: 12.5, height: 1.65, color: AppColors.ink),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -293,13 +443,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      );
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x0F000000)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5EF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
 }

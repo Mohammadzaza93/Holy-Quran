@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, tajweed-quiz-app]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      # المجلدات android/ و web/ موجودة مسبقاً؛ هذا يضمن اكتمال الملفات المولّدة فقط
+      - name: Get dependencies
+        run: flutter pub get
+
+      # تُحوَّل مخرجات التحليل إلى تعليقات ::error كي تظهر على الملفات في GitHub
+      - name: Analyze
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos 2>&1 | tee analyze.txt
+          code=${PIPESTATUS[0]}
+          grep -E '^\s*(error|warning) •' analyze.txt | while IFS= read -r line; do
+            file=$(echo "$line" | awk -F' • ' '{print $3}' | cut -d: -f1)
+            ln=$(echo "$line" | awk -F' • ' '{print $3}' | cut -d: -f2)
+            msg=$(echo "$line" | awk -F' • ' '{print $1 " " $2 " (" $4 ")"}')
+            echo "::error file=${file},line=${ln}::${msg}"
+          done
+          exit $code
+
+      - name: Test
+        run: flutter test --reporter github

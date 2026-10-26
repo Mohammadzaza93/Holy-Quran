@@ -5,6 +5,7 @@ import '../services/mushaf_service.dart';
 import '../services/storage_service.dart';
 import 'memorization_report_screen.dart';
 import 'practice_screen.dart';
+import '../theme/quran_font.dart';
 
 /// عرض السورة للقراءة. الضغط على أي آية يفتح شاشة التسميع والتصحيح لتلك الآية.
 class ReadingScreen extends StatefulWidget {
@@ -127,7 +128,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
             child: Text(
               'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 26, height: 2, color: Color(0xFF0B3D2E)),
+              style: TextStyle(fontFamily: quranFontFamily, fontSize: 26, height: 2, color: Color(0xFF0B3D2E)),
             ),
           ),
         for (var i = 0; i < surah.ayat.length; i++)
@@ -147,7 +148,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                       Text(
                         a.text,
                         textAlign: TextAlign.right,
-                        style: const TextStyle(fontSize: 24, height: 2.1),
+                        style: const TextStyle(fontFamily: quranFontFamily, fontSize: 24, height: 2.1),
                       ),
                       const SizedBox(height: 6),
                       Row(

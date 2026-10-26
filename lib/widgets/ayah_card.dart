@@ -7,6 +7,7 @@ import '../data/surahs.dart';
 import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/quran_service.dart';
+import '../theme/quran_font.dart';
 
 /// بطاقة تعرض العبارة القرآنية المرتبطة بالسؤال، مع:
 ///  • عرض الآية كاملة (من الإنترنت، ثم تُخزَّن للعمل دون اتصال)
@@ -119,7 +120,7 @@ class _AyahCardState extends State<AyahCard> {
             Text(
               phrase,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 28, height: 1.9, color: Color(0xFF0B3D2E)),
+              style: const TextStyle(fontFamily: quranFontFamily, fontSize: 28, height: 1.9, color: Color(0xFF0B3D2E)),
             ),
           if (q.hasAyahRef) ...[
             Text(
@@ -132,7 +133,7 @@ class _AyahCardState extends State<AyahCard> {
               Text(
                 _fullAyah!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, height: 2.0),
+                style: const TextStyle(fontFamily: quranFontFamily, fontSize: 22, height: 2.0),
               ),
             ],
             const SizedBox(height: 8),

@@ -6,6 +6,7 @@ import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
 import 'lessons_list_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  /// حالة الاتصال فقط — لا تعيد بناء أقسام التقدم مع كل نبضة شبكة.
   bool? _online;
 
   @override
@@ -41,7 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _checkOnline() async {
     final v = await ConnectivityService.isOnline();
-    if (mounted) setState(() => _online = v);
+    if (!mounted || v == _online) return;
+    setState(() => _online = v);
   }
 
   Future<void> _start(List<Question> pool, String title, int count) async {
@@ -51,39 +54,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => QuizScreen(title: title, questions: picked)),
     );
-    if (mounted) setState(() {});
   }
 
   void _chooseCount(String title, List<Question> pool) {
     showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('${pool.length} سؤالاً متاحاً'),
-            ),
-            for (final n in [10, 20])
-              if (pool.length > n)
-                ListTile(
-                  leading: const Icon(Icons.shuffle),
-                  title: Text('$n أسئلة عشوائية'),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _start(pool, title, n);
-                  },
-                ),
-            ListTile(
-              leading: const Icon(Icons.all_inclusive),
-              title: Text('كل الأسئلة (${pool.length})'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _start(pool, title, pool.length);
-              },
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                subtitle: Text('${pool.length} سؤالاً متاحاً'),
+              ),
+              for (final n in const [10, 20])
+                if (pool.length > n)
+                  ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.shuffle, size: 20)),
+                    title: Text('$n أسئلة عشوائية'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _start(pool, title, n);
+                    },
+                  ),
+              ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.all_inclusive, size: 20)),
+                title: Text('كل الأسئلة (${pool.length})'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _start(pool, title, pool.length);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -91,149 +96,160 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final store = StorageService.instance;
-    final scheme = Theme.of(context).colorScheme;
-    final all = QuestionRepository.all();
-    final wrong = QuestionRepository.wrongOnes();
-    final totalAns = store.totalAnswered;
-    final overall = totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('اختبار التجويد - رواية حفص'),
-        actions: [
-          IconButton(
-            tooltip: 'الإعدادات',
-            icon: const Icon(Icons.settings),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-              if (mounted) {
-                setState(() {});
-                _checkOnline();
-              }
-            },
-          ),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: _checkOnline,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Chip(
-                avatar: Icon(
-                  _online == true ? Icons.cloud_done : Icons.cloud_off,
-                  size: 18,
-                  color: _online == true ? Colors.green.shade700 : Colors.grey.shade700,
-                ),
-                label: Text(
-                  _online == null
-                      ? 'جارٍ فحص الاتصال...'
-                      : _online == true
-                          ? 'متصل: الصوتيات والآيات الكاملة متاحة'
-                          : 'دون اتصال: يعمل البنك المحلي بالكامل',
-                ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            const SliverAppBar(
+              pinned: true,
+              expandedHeight: 120,
+              flexibleSpace: FlexibleSpaceBar(
+                titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 14, end: 56),
+                title: Text('تجويد حفص'),
+                background: _AppBarBackground(),
               ),
             ),
-            const SizedBox(height: 8),
-            Card(
-              color: scheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            // زر الإعدادات فوق الشريط (خارج FlexibleSpace لتفادي إعادة البناء)
+            SliverToBoxAdapter(
+              child: const SizedBox.shrink(),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // شريط أدوات فوق المحتوى
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: IconButton(
+                      tooltip: 'الإعدادات',
+                      icon: const Icon(Icons.settings_outlined),
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                        );
+                        // بعد العودة قد تتغير الأسئلة البعيدة
+                        QuestionRepository.invalidate();
+                        _checkOnline();
+                      },
+                    ),
+                  ),
+                  _StatusChip(online: _online),
+                  const SizedBox(height: 14),
+
+                  // التقدم يعاد بناؤه فقط عند تغيّر StorageService
+                  ListenableBuilder(
+                    listenable: StorageService.instance,
+                    builder: (context, _) {
+                      final store = StorageService.instance;
+                      final all = QuestionRepository.all();
+                      final wrong = QuestionRepository.wrongOnes();
+                      final due = QuestionRepository.dueOnes();
+                      final totalAns = store.totalAnswered;
+                      final overall =
+                          totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text('مستواك العام', style: TextStyle(fontSize: 16)),
-                          const SizedBox(height: 4),
-                          Text(
-                            totalAns == 0 ? 'ابدأ أول اختبار' : '$overall%  (أجبت عن $totalAns سؤالاً)',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          _LevelCard(overall: overall, totalAns: totalAns),
+                          const SizedBox(height: 20),
+                          const _SectionLabel('التعلّم والتلاوة'),
+                          const SizedBox(height: 10),
+                          _FeatureCard(
+                            icon: Icons.play_circle_fill_rounded,
+                            iconBg: const Color(0xFFE8F5EF),
+                            iconColor: AppColors.primary,
+                            title: 'شرح التجويد المصور',
+                            subtitle: '45 حلقة للشيخ أيمن سويد على يوتيوب',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const LessonsListScreen()),
+                              );
+                            },
                           ),
+                          const SizedBox(height: 10),
+                          _FeatureCard(
+                            icon: Icons.mic_rounded,
+                            iconBg: const Color(0xFFEAF2FB),
+                            iconColor: const Color(0xFF1E5F8A),
+                            title: 'اقرأ وصحّح تلاوتك',
+                            subtitle: 'تسميع بالتعرف الصوتي مع تنبيه فوري للأخطاء',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const SurahListScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 22),
+                          const _SectionLabel('الاختبارات'),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.shuffle_rounded,
+                                  label: 'شامل',
+                                  hint: '20 سؤالاً',
+                                  filled: true,
+                                  onTap: () => _start(all, 'اختبار شامل', 20),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.event_repeat_rounded,
+                                  label: 'اليوم',
+                                  hint: due.isEmpty ? 'لا شيء' : '${due.length}',
+                                  enabled: due.isNotEmpty,
+                                  onTap: due.isEmpty
+                                      ? null
+                                      : () => _start(due, 'مراجعة اليوم', due.length),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.history_rounded,
+                                  label: 'أخطائي',
+                                  hint: wrong.isEmpty ? '0' : '${wrong.length}',
+                                  enabled: wrong.isNotEmpty,
+                                  onTap: wrong.isEmpty
+                                      ? null
+                                      : () => _start(wrong, 'مراجعة أخطائي', wrong.length),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
+                          const _SectionLabel('أقسام الأسئلة'),
+                          const SizedBox(height: 10),
+                          for (final c in QuizCategory.values) ...[
+                            _CategoryCard(
+                              category: c,
+                              questionCount: QuestionRepository.countInCategory(c),
+                              onTap: () => _chooseCount(c.title, QuestionRepository.byCategory(c)),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ],
+                      );
+                    },
+                  ),
+
+                  if (_online == false)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'أنت في وضع عدم الاتصال — البنك المحلي يعمل بالكامل.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
                       ),
                     ),
-                    Icon(Icons.emoji_events, size: 40, color: scheme.primary),
-                  ],
-                ),
+                ]),
               ),
             ),
-            const SizedBox(height: 12),
-            Card(
-              color: scheme.tertiaryContainer,
-              child: ListTile(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LessonsListScreen()),
-                  );
-                },
-                leading: CircleAvatar(
-                  backgroundColor: scheme.tertiary,
-                  child: Icon(Icons.menu_book, color: scheme.onTertiary),
-                ),
-                title: const Text(
-                  'سلسلة شروح التجويد',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: const Text(
-                  '36 درسًا أصليًا مع أمثلة قرآنية مستندة إلى منهج الشيخ أيمن رشدي سويد',
-                ),
-                trailing: const Icon(Icons.chevron_left),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              color: scheme.secondaryContainer,
-              child: ListTile(
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SurahListScreen()),
-                  );
-                  if (mounted) setState(() {});
-                },
-                leading: CircleAvatar(
-                  backgroundColor: scheme.secondary,
-                  child: Icon(Icons.mic, color: scheme.onSecondary),
-                ),
-                title: const Text('اقرأ القرآن وصحّح تلاوتك',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('اقرأ آية بصوتك ويُظهر لك التطبيق الكلمات التي أخطأت فيها'),
-                trailing: const Icon(Icons.chevron_left),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () => _start(all, 'اختبار شامل', 20),
-              icon: const Icon(Icons.shuffle),
-              label: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('اختبار شامل (20 سؤالاً عشوائياً)'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: wrong.isEmpty ? null : () => _start(wrong, 'مراجعة أخطائي', wrong.length),
-              icon: const Icon(Icons.history),
-              label: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('مراجعة أخطائي (${wrong.length})'),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Text('الأقسام', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            for (final c in QuizCategory.values)
-              _CategoryTile(
-                category: c,
-                questionCount: all.where((q) => q.category == c).length,
-                onTap: () => _chooseCount(c.title, QuestionRepository.byCategory(c)),
-              ),
           ],
         ),
       ),
@@ -241,8 +257,278 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
+class _AppBarBackground extends StatelessWidget {
+  const _AppBarBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
+        ),
+      ),
+      child: Align(
+        alignment: AlignmentDirectional.bottomStart,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 48),
+          child: Text(
+            'مراجعة · تسميع · تصحيح',
+            style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 13),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.online});
+  final bool? online;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOn = online == true;
+    final isOff = online == false;
+    final color = isOn ? const Color(0xFF1B7A4E) : (isOff ? AppColors.muted : AppColors.gold);
+    final bg = isOn ? const Color(0xFFE6F4EC) : (isOff ? const Color(0xFFEEF0EE) : AppColors.goldSoft);
+    final text = online == null
+        ? 'جارٍ فحص الاتصال...'
+        : isOn
+            ? 'متصل — الصوتيات والآيات متاحة'
+            : 'دون اتصال — البنك المحلي جاهز';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isOn
+                ? Icons.cloud_done_rounded
+                : (isOff ? Icons.cloud_off_rounded : Icons.cloud_queue_rounded),
+            size: 18,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LevelCard extends StatelessWidget {
+  const _LevelCard({required this.overall, required this.totalAns});
+  final int overall;
+  final int totalAns;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [Color(0xFF0B6E4F), Color(0xFF147A58)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'مستواك العام',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  totalAns == 0 ? 'ابدأ أول اختبار' : '$overall%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+                if (totalAns > 0) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'أجبت عن $totalAns سؤالاً',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.emoji_events_rounded, color: Color(0xFFFFE08A), size: 34),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+        color: AppColors.ink,
+      ),
+    );
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0x0F000000)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(14)),
+                child: Icon(icon, color: iconColor, size: 26),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: AppColors.muted, height: 1.35, fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    this.onTap,
+    this.filled = false,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String label;
+  final String hint;
+  final VoidCallback? onTap;
+  final bool filled;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = enabled && onTap != null;
+    final bg = filled && active
+        ? AppColors.primary
+        : (active ? Colors.white : const Color(0xFFF0F0EC));
+    final fg = filled && active
+        ? Colors.white
+        : (active ? AppColors.ink : AppColors.muted);
+
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: active ? onTap : null,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: filled && active ? null : Border.all(color: const Color(0x0F000000)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: fg, size: 22),
+              const SizedBox(height: 6),
+              Text(label, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 13)),
+              const SizedBox(height: 2),
+              Text(hint, style: TextStyle(color: fg.withValues(alpha: 0.75), fontSize: 11)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({
     required this.category,
     required this.questionCount,
     required this.onTap,
@@ -255,36 +541,63 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = StorageService.instance;
-    final scheme = Theme.of(context).colorScheme;
     final answered = store.answered(category);
     final acc = store.accuracy(category);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        leading: CircleAvatar(
-          backgroundColor: scheme.primaryContainer,
-          child: Icon(category.icon, color: scheme.primary),
-        ),
-        title: Text(category.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0x0F000000)),
+          ),
+          child: Row(
             children: [
-              Text(
-                answered == 0
-                    ? '$questionCount سؤالاً'
-                    : '$questionCount سؤالاً  •  دقتك ${(acc * 100).round()}%',
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5EF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(category.icon, color: AppColors.primary, size: 22),
               ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(value: acc, minHeight: 5),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(category.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    const SizedBox(height: 4),
+                    Text(
+                      answered == 0
+                          ? '$questionCount سؤالاً'
+                          : '$questionCount سؤالاً  ·  دقتك ${(acc * 100).round()}%',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+                    ),
+                    if (answered > 0) ...[
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: acc,
+                          minHeight: 5,
+                          backgroundColor: const Color(0xFFE2E8E4),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.muted),
             ],
           ),
         ),
-        trailing: const Icon(Icons.chevron_left),
       ),
     );
   }

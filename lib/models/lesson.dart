@@ -1,34 +1,41 @@
-/// نموذج الدرس في سلسلة شروح التجويد.
-/// المحتوى أصلي ومستوحى من منهج الشيخ أيمن رشدي سويد مع الإسناد الواضح.
+/// درس من سلسلة شروح التجويد المصور للشيخ أيمن رشدي سويد (روابط يوتيوب).
 class Lesson {
   const Lesson({
     required this.id,
     required this.order,
     required this.title,
     required this.summary,
-    required this.content,
+    required this.youtubeVideoId,
     this.relatedCategory,
   });
 
   /// معرّف فريد للدرس
   final String id;
 
-  /// ترتيب الدرس في السلسلة (يبدأ من 1)
+  /// ترتيب الحلقة في السلسلة (يبدأ من 1)
   final int order;
 
-  /// عنوان الدرس
+  /// عنوان الحلقة
   final String title;
 
-  /// ملخص قصير يظهر في قائمة الدروس
+  /// ملخص قصير يظهر في القائمة
   final String summary;
 
-  /// نص الشرح الكامل (يدعم أسطر متعددة)
-  final String content;
+  /// معرّف فيديو يوتيوب (بدون الرابط الكامل)
+  final String youtubeVideoId;
 
-  /// قسم الاختبار المرتبط (اختياري) لربطه لاحقاً بالأسئلة
+  /// قسم الاختبار المرتبط (اختياري)
   final String? relatedCategory;
 
-  /// نص الإسناد الثابت
+  /// رابط المشاهدة على يوتيوب
+  String get youtubeUrl => 'https://www.youtube.com/watch?v=$youtubeVideoId';
+
+  /// رابط التطبيق إن وُجد
+  String get youtubeAppUrl => 'youtube://watch?v=$youtubeVideoId';
+
+  static const String playlistUrl =
+      'https://www.youtube.com/playlist?list=PLJi21Zen45zQ-p3e38-Wb94LhDKIZ7sac';
+
   static const String attribution =
-      'مستند إلى محاضرات الشيخ أيمن رشدي سويد – كتاب النور المبين في تجويد القرآن الكريم';
+      'شرح كتاب التجويد المصور — فضيلة الدكتور الشيخ أيمن رشدي سويد (قائمة تشغيل رسمية على يوتيوب)';
 }

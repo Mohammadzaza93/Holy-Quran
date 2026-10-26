@@ -10,11 +10,10 @@ import '../services/quran_service.dart';
 import '../services/recitation_checker.dart';
 import '../services/speech_service.dart';
 import '../services/storage_service.dart';
+import '../theme/app_theme.dart';
+import '../theme/quran_font.dart';
 
-/// شاشة التسميع المحسّنة:
-/// - تنبيه فوري أثناء القراءة (مقارنة جزئية وتلوين الكلمات)
-/// - وضع الإتقان: لا تنتقل للتالية إلا بعد نسبة مقبولة (أو تجاوز يدوي)
-/// - يعمل مجانًا عبر محرك التعرف على الجهاز بدون اشتراك
+/// شاشة التسميع مع تتبع حي كلمة بكلمة (مؤشر + تلوين فوري).
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key, required this.surah, required this.startIndex});
 
@@ -37,18 +36,20 @@ class _PracticeScreenState extends State<PracticeScreen> {
   bool _playing = false;
   bool _loadingAudio = false;
 
-  /// وضع الإتقان: يمنع الانتقال السهل إن كانت النتيجة ضعيفة
   bool _masteryMode = true;
   static const double _masteryThreshold = 0.8;
 
   String _lastWords = '';
   RecitationResult? _result;
-  /// نتيجة مباشرة أثناء الاستماع (من النتائج الجزئية)
-  RecitationResult? _liveResult;
+  LiveTrackResult? _liveTrack;
   String? _message;
 
   AyahData get _ayah => widget.surah.ayat[_index];
   int get _count => widget.surah.ayat.length;
+
+  /// نص العرض المفضّل (مشكول إن توفر)
+  String get _displayAyahText =>
+      _ayah.text.trim().isNotEmpty ? _ayah.text : _ayah.simple;
 
   @override
   void initState() {
@@ -70,8 +71,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     super.dispose();
   }
 
-  // ───────────────────────── التسجيل والتعرف ─────────────────────────
-
   Future<void> _toggleMic() async {
     if (_listening) {
       await _speech.stop();
@@ -82,7 +81,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() {
       _message = null;
       _result = null;
-      _liveResult = null;
+      _liveTrack = null;
       _lastWords = '';
     });
 
@@ -121,8 +120,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
         setState(() {
           _listening = false;
           _finished = true;
-          _liveResult = null;
-          _message = 'تعذّر التعرف على الصوت ($msg). تحقق من الاتصال والميكروفون ثم أعد المحاولة.';
+          _liveTrack = null;
+          _message =
+              'تعذّر التعرف على الصوت ($msg). تحقق من الاتصال والميكروفون ثم أعد المحاولة.';
         });
       }
     };
@@ -130,18 +130,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() {
       _listening = true;
       _finished = false;
+      // مؤشر على أول كلمة فور بدء الاستماع
+      _liveTrack = RecitationChecker.trackLive(_displayAyahText, '');
     });
+
     try {
       await _speech.start(onWords: (words, isFinal) {
         if (!mounted) return;
         _lastWords = words;
-        // مقارنة فورية مع النتائج الجزئية
-        if (words.trim().isNotEmpty) {
-          final live = RecitationChecker.compare(_ayah.simple, words);
-          setState(() => _liveResult = live);
-        } else {
-          setState(() => _liveResult = null);
-        }
+        final track = RecitationChecker.trackLive(_displayAyahText, words);
+        setState(() => _liveTrack = track);
         if (isFinal) _finish();
       });
     } catch (_) {
@@ -158,21 +156,21 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_finished) return;
     _finished = true;
     final heard = _lastWords;
-    final result = RecitationChecker.compare(_ayah.simple, heard);
+    final result = RecitationChecker.compare(_displayAyahText, heard);
     setState(() {
       _listening = false;
-      _liveResult = null;
+      _liveTrack = null;
       if (result.nothingHeard || (silentNothingHeard && heard.trim().isEmpty)) {
         _result = null;
-        _message = 'لم أسمع قراءة واضحة. قرّب الجهاز منك وتحدّث بصوت واضح، ثم أعد المحاولة.';
+        _message =
+            'لم أسمع قراءة واضحة. قرّب الجهاز منك وتحدّث بصوت واضح، ثم أعد المحاولة.';
       } else {
         _result = result;
-        StorageService.instance.saveAyahScore(widget.surah.number, _ayah.number, result.score);
+        StorageService.instance
+            .saveAyahScore(widget.surah.number, _ayah.number, result.score);
       }
     });
   }
-
-  // ───────────────────────── الاستماع للقارئ ─────────────────────────
 
   Future<void> _toggleReference() async {
     if (_playing) {
@@ -208,11 +206,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
   }
 
-  // ───────────────────────── التنقل ─────────────────────────
-
   bool get _canAdvanceFreely {
     if (!_masteryMode) return true;
-    final best = StorageService.instance.ayahBestScore(widget.surah.number, _ayah.number);
+    final best =
+        StorageService.instance.ayahBestScore(widget.surah.number, _ayah.number);
     if (best != null && best >= _masteryThreshold) return true;
     if (_result != null && _result!.score >= _masteryThreshold) return true;
     return false;
@@ -222,11 +219,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final next = _index + delta;
     if (next < 0 || next >= _count) return;
 
-    // عند الانتقال للتالية في وضع الإتقان دون إتقان: تأكيد
     if (delta > 0 && _masteryMode && !_canAdvanceFreely) {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: const Text('لم تُتقن الآية بعد'),
           content: Text(
             'وضع الإتقان مفعّل. يُفضَّل إعادة القراءة حتى تصل إلى ${(_masteryThreshold * 100).round()}% على الأقل.\n\nهل تريد الانتقال رغم ذلك؟',
@@ -246,7 +243,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() {
       _index = next;
       _result = null;
-      _liveResult = null;
+      _liveTrack = null;
       _message = null;
       _lastWords = '';
       _listening = false;
@@ -255,8 +252,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     StorageService.instance.saveLastPosition(widget.surah.number, _ayah.number);
   }
 
-  // ───────────────────────── الواجهة ─────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -264,23 +259,33 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('سورة ${surahName(widget.surah.number)} - آية ${arabicDigits(_ayah.number)}'),
+        title: Text(
+          'سورة ${surahName(widget.surah.number)} · آية ${arabicDigits(_ayah.number)}',
+        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            LinearProgressIndicator(value: (_index + 1) / _count),
+            LinearProgressIndicator(
+              value: (_index + 1) / _count,
+              minHeight: 4,
+              backgroundColor: const Color(0xFFE2E8E4),
+            ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
                   _ayahCard(textHidden),
+                  if (_listening && _liveTrack != null) ...[
+                    const SizedBox(height: 10),
+                    _liveProgressBar(_liveTrack!),
+                  ],
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _hideText,
                     onChanged: (v) => setState(() => _hideText = v),
                     title: const Text('وضع التسميع من الحفظ'),
-                    subtitle: const Text('يُخفى نص الآية حتى تنتهي من قراءتها'),
+                    subtitle: const Text('يُخفى نص الآية حتى تبدأ القراءة أو تنتهي'),
                   ),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -288,7 +293,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     onChanged: (v) => setState(() => _masteryMode = v),
                     title: const Text('وضع الإتقان'),
                     subtitle: Text(
-                      'يطلب إعادة المحاولة قبل الانتقال إن كانت النتيجة أقل من ${(_masteryThreshold * 100).round()}%',
+                      'يمنع الانتقال السهل إن كانت النتيجة أقل من ${(_masteryThreshold * 100).round()}%',
                     ),
                   ),
                   Wrap(
@@ -298,7 +303,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         onPressed: _loadingAudio ? null : _toggleReference,
                         icon: _loadingAudio
                             ? const SizedBox(
-                                width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
                             : Icon(_playing ? Icons.stop : Icons.volume_up),
                         label: Text(_playing ? 'إيقاف' : 'استمع للقارئ أولاً'),
                       ),
@@ -306,9 +314,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   ),
                   const SizedBox(height: 18),
                   _micArea(scheme),
-                  // تنبيه فوري أثناء الاستماع
-                  if (_listening && _liveResult != null && !_liveResult!.nothingHeard)
-                    _liveFeedback(_liveResult!),
                   if (_message != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -343,7 +348,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
                             : Icons.chevron_left,
                       ),
                       label: Text(
-                        _masteryMode && !_canAdvanceFreely ? 'التالية (تجاوز)' : 'التالية',
+                        _masteryMode && !_canAdvanceFreely
+                            ? 'التالية (تجاوز)'
+                            : 'التالية',
                       ),
                     ),
                   ),
@@ -356,6 +363,44 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
   }
 
+  Widget _liveProgressBar(LiveTrackResult t) {
+    final total = t.words.length;
+    final progress = total == 0 ? 0.0 : t.cursor / total;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.graphic_eq_rounded, size: 18, color: AppColors.primary),
+            const SizedBox(width: 6),
+            Text(
+              'الكلمة ${t.cursor.clamp(0, total)} من $total',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+            const Spacer(),
+            Text(
+              '${(t.score * 100).round()}%',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            minHeight: 6,
+            backgroundColor: const Color(0xFFE2E8E4),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _ayahCard(bool hidden) {
     return Container(
       width: double.infinity,
@@ -363,7 +408,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD9C79A)),
+        border: Border.all(
+          color: _listening ? AppColors.primary.withValues(alpha: 0.45) : const Color(0xFFD9C79A),
+          width: _listening ? 1.6 : 1,
+        ),
       ),
       child: hidden
           ? const Padding(
@@ -372,16 +420,101 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 children: [
                   Icon(Icons.visibility_off, color: Colors.grey),
                   SizedBox(height: 8),
-                  Text('النص مخفي، اقرأ الآية من حفظك ثم اضغط الميكروفون',
-                      textAlign: TextAlign.center, style: TextStyle(height: 1.7)),
+                  Text(
+                    'النص مخفي — اقرأ من حفظك ثم اضغط الميكروفون',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(height: 1.7),
+                  ),
                 ],
               ),
             )
-          : Text(
-              _ayah.text,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 28, height: 2.1, color: Color(0xFF0B3D2E)),
-            ),
+          : _buildAyahWords(),
+    );
+  }
+
+  /// يعرض الآية مع تلوين حي عند الاستماع أو بعد النتيجة النهائية.
+  Widget _buildAyahWords() {
+    final List<WordResult>? liveWords =
+        _listening && _liveTrack != null ? _liveTrack!.words : null;
+    final List<WordResult>? finalWords = _result?.words;
+
+    if (liveWords != null || finalWords != null) {
+      final words = liveWords ?? finalWords!;
+      return Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 6,
+        runSpacing: 10,
+        children: [
+          for (final w in words) _trackedWord(w, live: liveWords != null),
+        ],
+      );
+    }
+
+    return Text(
+      _displayAyahText,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontFamily: quranFontFamily,
+        fontSize: 28,
+        height: 2.1,
+        color: Color(0xFF0B3D2E),
+      ),
+    );
+  }
+
+  Widget _trackedWord(WordResult w, {required bool live}) {
+    Color bg;
+    Color fg = const Color(0xFF0B3D2E);
+    Border? border;
+    List<BoxShadow>? shadow;
+
+    switch (w.status) {
+      case WordStatus.correct:
+        bg = const Color(0xFFD7F0DD);
+      case WordStatus.near:
+        bg = const Color(0xFFFFF1C2);
+      case WordStatus.wrong:
+        bg = const Color(0xFFF8D7D7);
+      case WordStatus.missing:
+        bg = Colors.white;
+        border = Border.all(color: Colors.red.shade400, width: 1.5);
+      case WordStatus.current:
+        bg = const Color(0xFFDCEBFF);
+        border = Border.all(color: const Color(0xFF1E5F8A), width: 2);
+        shadow = [
+          BoxShadow(
+            color: const Color(0xFF1E5F8A).withValues(alpha: 0.25),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ];
+      case WordStatus.pending:
+        bg = Colors.transparent;
+        fg = const Color(0xFF0B3D2E).withValues(alpha: 0.55);
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: border,
+        boxShadow: shadow,
+      ),
+      child: Text(
+        w.display,
+        style: TextStyle(
+          fontFamily: quranFontFamily,
+          fontSize: 26,
+          height: 1.7,
+          color: fg,
+          fontWeight: w.status == WordStatus.current ? FontWeight.w700 : FontWeight.w400,
+          decoration:
+              w.status == WordStatus.missing ? TextDecoration.underline : null,
+          decorationColor: Colors.red.shade400,
+        ),
+      ),
     );
   }
 
@@ -412,7 +545,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         const SizedBox(height: 10),
         Text(
           _listening
-              ? 'جارٍ الاستماع... اقرأ الآية ثم اضغط للإنهاء'
+              ? 'جارٍ التتبع الحي… اقرأ بوضوح ثم اضغط للإيقاف'
               : (_result == null ? 'اضغط وابدأ القراءة' : 'اضغط لإعادة المحاولة'),
           style: const TextStyle(fontSize: 15),
         ),
@@ -422,59 +555,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
             child: Text(
               live,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, height: 1.8, color: scheme.outline),
+              style: TextStyle(fontSize: 16, height: 1.7, color: scheme.outline),
             ),
           ),
       ],
-    );
-  }
-
-  /// تغذية راجعة فورية أثناء القراءة
-  Widget _liveFeedback(RecitationResult r) {
-    final pct = (r.score * 100).round();
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Card(
-        color: const Color(0xFFF0F7F4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.hearing, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    'متابعة مباشرة · $pct%',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 6,
-                runSpacing: 8,
-                children: [for (final w in r.words) _wordChip(w, compact: true)],
-              ),
-              if (r.wrong > 0 || r.missing > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    [
-                      if (r.wrong > 0) '${r.wrong} خاطئة',
-                      if (r.missing > 0) '${r.missing} متروكة',
-                      if (r.extras.isNotEmpty) '${r.extras.length} زائدة',
-                    ].join(' · '),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Colors.red.shade800),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -498,12 +582,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('$pct%',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary)),
+              Text(
+                '$pct%',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
               Text(headline, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
               if (_masteryMode && r.score < _masteryThreshold)
                 Padding(
@@ -517,13 +604,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
               const SizedBox(height: 14),
               Wrap(
                 alignment: WrapAlignment.center,
-                spacing: 6,
-                runSpacing: 8,
-                children: [for (final w in r.words) _wordChip(w)],
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                alignment: WrapAlignment.center,
                 spacing: 12,
                 runSpacing: 4,
                 children: [
@@ -531,48 +611,19 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   _legend(_nearBg, 'قريبة ${r.near}'),
                   _legend(_wrongBg, 'خاطئة ${r.wrong}'),
                   _legend(Colors.white, 'متروكة ${r.missing}', border: Colors.red.shade400),
-                  if (r.extras.isNotEmpty) _legend(Colors.grey.shade300, 'زائدة ${r.extras.length}'),
+                  if (r.extras.isNotEmpty)
+                    _legend(Colors.grey.shade300, 'زائدة ${r.extras.length}'),
                 ],
               ),
               ..._details(r),
               const Divider(height: 24),
               const Text(
-                'يتحقق التصحيح من الكلمات المنطوقة فقط (مجاني وعلى الجهاز). أحكام التجويد (المدود، الغنة، الإخفاء، المخارج الدقيقة) لا يكشفها التعرف الصوتي العام، فراجعها مع مقرئ.',
+                'التتبع الحي يعتمد Edit Distance على الكلمات بعد توحيد الرسم. أحكام التجويد الدقيقة تحتاج مقرئاً.',
                 style: TextStyle(fontSize: 12.5, height: 1.7, color: Colors.black54),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _wordChip(WordResult w, {bool compact = false}) {
-    Color bg;
-    Color? border;
-    TextDecoration? deco;
-    switch (w.status) {
-      case WordStatus.correct:
-        bg = _okBg;
-      case WordStatus.near:
-        bg = _nearBg;
-      case WordStatus.wrong:
-        bg = _wrongBg;
-      case WordStatus.missing:
-        bg = Colors.white;
-        border = Colors.red.shade400;
-        deco = TextDecoration.underline;
-    }
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: compact ? 6 : 8, vertical: compact ? 3 : 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: border == null ? null : Border.all(color: border, width: 1.5),
-      ),
-      child: Text(
-        w.display,
-        style: TextStyle(fontSize: compact ? 18 : 22, height: 1.8, decoration: deco),
       ),
     );
   }
