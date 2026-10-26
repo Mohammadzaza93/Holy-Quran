@@ -179,20 +179,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 },
                 leading: CircleAvatar(
                   backgroundColor: scheme.tertiary,
-                  child: Icon(Icons.menu_book, color: scheme.onTertiary),
+                  child: Icon(Icons.play_circle_fill, color: scheme.onTertiary),
                 ),
                 title: const Text(
-                  'سلسلة شروح التجويد',
+                  'شرح التجويد المصور (يوتيوب)',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: const Text(
-                  '36 درسًا أصليًا مع أمثلة قرآنية مستندة إلى منهج الشيخ أيمن رشدي سويد',
+                  '45 حلقة للدكتور أيمن رشدي سويد — تفتح على يوتيوب',
                 ),
                 trailing: const Icon(Icons.chevron_left),
               ),
             ),
             const SizedBox(height: 12),
-            // شرح كتاب «النور المبين» (ملخصات مع المرجع)
             Card(
               color: scheme.tertiaryContainer,
               child: ListTile(
@@ -216,7 +215,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 12),
-            // وضع القراءة والتصحيح الصوتي
             Card(
               color: scheme.secondaryContainer,
               child: ListTile(
