@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  /// حالة الاتصال فقط — لا تعيد بناء أقسام التقدم مع كل نبضة شبكة.
   bool? _online;
 
   @override
@@ -42,7 +43,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Future<void> _checkOnline() async {
     final v = await ConnectivityService.isOnline();
-    if (mounted) setState(() => _online = v);
+    if (!mounted || v == _online) return;
+    setState(() => _online = v);
   }
 
   Future<void> _start(List<Question> pool, String title, int count) async {
@@ -52,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => QuizScreen(title: title, questions: picked)),
     );
-    if (mounted) setState(() {});
   }
 
   void _chooseCount(String title, List<Question> pool) {
@@ -68,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
                 subtitle: Text('${pool.length} سؤالاً متاحاً'),
               ),
-              for (final n in [10, 20])
+              for (final n in const [10, 20])
                 if (pool.length > n)
                   ListTile(
                     leading: const CircleAvatar(child: Icon(Icons.shuffle, size: 20)),
@@ -95,158 +96,151 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final store = StorageService.instance;
-    final all = QuestionRepository.all();
-    final wrong = QuestionRepository.wrongOnes();
-    final due = QuestionRepository.dueOnes();
-    final totalAns = store.totalAnswered;
-    final overall = totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
-    final online = _online == true;
-
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _checkOnline,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
+            const SliverAppBar(
               pinned: true,
               expandedHeight: 120,
               flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsetsDirectional.only(start: 16, bottom: 14, end: 56),
-                title: const Text('تجويد حفص'),
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
-                    ),
-                  ),
-                  child: Align(
-                    alignment: AlignmentDirectional.bottomStart,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
-                      child: Text(
-                        'مراجعة · تسميع · تصحيح',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
-                      ),
-                    ),
-                  ),
-                ),
+                titlePadding: EdgeInsetsDirectional.only(start: 16, bottom: 14, end: 56),
+                title: Text('تجويد حفص'),
+                background: _AppBarBackground(),
               ),
-              actions: [
-                IconButton(
-                  tooltip: 'الإعدادات',
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                    );
-                    if (mounted) {
-                      setState(() {});
-                      _checkOnline();
-                    }
-                  },
-                ),
-              ],
+            ),
+            // زر الإعدادات فوق الشريط (خارج FlexibleSpace لتفادي إعادة البناء)
+            SliverToBoxAdapter(
+              child: const SizedBox.shrink(),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // حالة الاتصال
+                  // شريط أدوات فوق المحتوى
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: IconButton(
+                      tooltip: 'الإعدادات',
+                      icon: const Icon(Icons.settings_outlined),
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                        );
+                        // بعد العودة قد تتغير الأسئلة البعيدة
+                        QuestionRepository.invalidate();
+                        _checkOnline();
+                      },
+                    ),
+                  ),
                   _StatusChip(online: _online),
                   const SizedBox(height: 14),
 
-                  // بطاقة المستوى
-                  _LevelCard(
-                    overall: overall,
-                    totalAns: totalAns,
-                  ),
-                  const SizedBox(height: 20),
+                  // التقدم يعاد بناؤه فقط عند تغيّر StorageService
+                  ListenableBuilder(
+                    listenable: StorageService.instance,
+                    builder: (context, _) {
+                      final store = StorageService.instance;
+                      final all = QuestionRepository.all();
+                      final wrong = QuestionRepository.wrongOnes();
+                      final due = QuestionRepository.dueOnes();
+                      final totalAns = store.totalAnswered;
+                      final overall =
+                          totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
 
-                  const _SectionLabel('التعلّم والتلاوة'),
-                  const SizedBox(height: 10),
-                  _FeatureCard(
-                    icon: Icons.play_circle_fill_rounded,
-                    iconBg: const Color(0xFFE8F5EF),
-                    iconColor: AppColors.primary,
-                    title: 'شرح التجويد المصور',
-                    subtitle: '45 حلقة للشيخ أيمن سويد على يوتيوب',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const LessonsListScreen()),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _LevelCard(overall: overall, totalAns: totalAns),
+                          const SizedBox(height: 20),
+                          const _SectionLabel('التعلّم والتلاوة'),
+                          const SizedBox(height: 10),
+                          _FeatureCard(
+                            icon: Icons.play_circle_fill_rounded,
+                            iconBg: const Color(0xFFE8F5EF),
+                            iconColor: AppColors.primary,
+                            title: 'شرح التجويد المصور',
+                            subtitle: '45 حلقة للشيخ أيمن سويد على يوتيوب',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const LessonsListScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          _FeatureCard(
+                            icon: Icons.mic_rounded,
+                            iconBg: const Color(0xFFEAF2FB),
+                            iconColor: const Color(0xFF1E5F8A),
+                            title: 'اقرأ وصحّح تلاوتك',
+                            subtitle: 'تسميع بالتعرف الصوتي مع تنبيه فوري للأخطاء',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const SurahListScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 22),
+                          const _SectionLabel('الاختبارات'),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.shuffle_rounded,
+                                  label: 'شامل',
+                                  hint: '20 سؤالاً',
+                                  filled: true,
+                                  onTap: () => _start(all, 'اختبار شامل', 20),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.event_repeat_rounded,
+                                  label: 'اليوم',
+                                  hint: due.isEmpty ? 'لا شيء' : '${due.length}',
+                                  enabled: due.isNotEmpty,
+                                  onTap: due.isEmpty
+                                      ? null
+                                      : () => _start(due, 'مراجعة اليوم', due.length),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _QuickAction(
+                                  icon: Icons.history_rounded,
+                                  label: 'أخطائي',
+                                  hint: wrong.isEmpty ? '0' : '${wrong.length}',
+                                  enabled: wrong.isNotEmpty,
+                                  onTap: wrong.isEmpty
+                                      ? null
+                                      : () => _start(wrong, 'مراجعة أخطائي', wrong.length),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
+                          const _SectionLabel('أقسام الأسئلة'),
+                          const SizedBox(height: 10),
+                          for (final c in QuizCategory.values) ...[
+                            _CategoryCard(
+                              category: c,
+                              questionCount: QuestionRepository.countInCategory(c),
+                              onTap: () => _chooseCount(c.title, QuestionRepository.byCategory(c)),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ],
                       );
                     },
                   ),
-                  const SizedBox(height: 10),
-                  _FeatureCard(
-                    icon: Icons.mic_rounded,
-                    iconBg: const Color(0xFFEAF2FB),
-                    iconColor: const Color(0xFF1E5F8A),
-                    title: 'اقرأ وصحّح تلاوتك',
-                    subtitle: 'تسميع بالتعرف الصوتي مع تنبيه فوري للأخطاء',
-                    onTap: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SurahListScreen()),
-                      );
-                      if (mounted) setState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 22),
 
-                  const _SectionLabel('الاختبارات'),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.shuffle_rounded,
-                          label: 'شامل',
-                          hint: '20 سؤالاً',
-                          filled: true,
-                          onTap: () => _start(all, 'اختبار شامل', 20),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.event_repeat_rounded,
-                          label: 'اليوم',
-                          hint: due.isEmpty ? 'لا شيء' : '${due.length}',
-                          enabled: due.isNotEmpty,
-                          onTap: due.isEmpty ? null : () => _start(due, 'مراجعة اليوم', due.length),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.history_rounded,
-                          label: 'أخطائي',
-                          hint: wrong.isEmpty ? '0' : '${wrong.length}',
-                          enabled: wrong.isNotEmpty,
-                          onTap: wrong.isEmpty ? null : () => _start(wrong, 'مراجعة أخطائي', wrong.length),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-
-                  const _SectionLabel('أقسام الأسئلة'),
-                  const SizedBox(height: 10),
-                  for (final c in QuizCategory.values) ...[
-                    _CategoryCard(
-                      category: c,
-                      questionCount: all.where((q) => q.category == c).length,
-                      onTap: () => _chooseCount(c.title, QuestionRepository.byCategory(c)),
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-
-                  if (!online)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                  if (_online == false)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
                       child: Text(
                         'أنت في وضع عدم الاتصال — البنك المحلي يعمل بالكامل.',
                         textAlign: TextAlign.center,
@@ -257,6 +251,33 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppBarBackground extends StatelessWidget {
+  const _AppBarBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [AppColors.primaryDark, AppColors.primary, AppColors.primaryLight],
+        ),
+      ),
+      child: Align(
+        alignment: AlignmentDirectional.bottomStart,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 48),
+          child: Text(
+            'مراجعة · تسميع · تصحيح',
+            style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 13),
+          ),
         ),
       ),
     );
@@ -288,7 +309,9 @@ class _StatusChip extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            isOn ? Icons.cloud_done_rounded : (isOff ? Icons.cloud_off_rounded : Icons.cloud_queue_rounded),
+            isOn
+                ? Icons.cloud_done_rounded
+                : (isOff ? Icons.cloud_off_rounded : Icons.cloud_queue_rounded),
             size: 18,
             color: color,
           ),
@@ -434,7 +457,10 @@ class _FeatureCard extends StatelessWidget {
                   children: [
                     Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
                     const SizedBox(height: 3),
-                    Text(subtitle, style: const TextStyle(color: AppColors.muted, height: 1.35, fontSize: 12.5)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: AppColors.muted, height: 1.35, fontSize: 12.5),
+                    ),
                   ],
                 ),
               ),
