@@ -10,6 +10,7 @@ import '../services/quran_service.dart';
 import '../services/recitation_checker.dart';
 import '../services/speech_service.dart';
 import '../services/storage_service.dart';
+import '../theme/quran_font.dart';
 
 /// شاشة التسميع المحسّنة:
 /// - تنبيه فوري أثناء القراءة (مقارنة جزئية وتلوين الكلمات)
@@ -380,7 +381,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           : Text(
               _ayah.text,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 28, height: 2.1, color: Color(0xFF0B3D2E)),
+              style: const TextStyle(fontFamily: quranFontFamily, fontSize: 28, height: 2.1, color: Color(0xFF0B3D2E)),
             ),
     );
   }
@@ -572,7 +573,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       ),
       child: Text(
         w.display,
-        style: TextStyle(fontSize: compact ? 18 : 22, height: 1.8, decoration: deco),
+        style: TextStyle(fontFamily: quranFontFamily, fontSize: compact ? 18 : 22, height: 1.8, decoration: deco),
       ),
     );
   }
