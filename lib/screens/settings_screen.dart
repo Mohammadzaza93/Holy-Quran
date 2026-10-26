@@ -256,10 +256,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           OutlinedButton.icon(
             onPressed: _busy
                 ? null
-                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة وتقدمك في الدروس.', () async {
+                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة.', () async {
                       await StorageService.instance.resetProgress();
                       await StorageService.instance.resetReading();
-                      await StorageService.instance.resetBookLessons();
                       if (mounted) _snack('تم مسح التقدم');
                     }),
             icon: const Icon(Icons.delete_outline),
@@ -270,18 +269,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: _busy || readLessons == 0
                 ? null
                 : () => _confirm(
-                      'مسح تقدم الدروس',
-                      'سيتم إلغاء تعليم جميع الدروس كمقروءة ($readLessons درسًا).',
+                      'مسح تقدم حلقات يوتيوب',
+                      'سيتم إلغاء تعليم الحلقات كمقروءة ($readLessons).',
                       () async {
                         await StorageService.instance.resetLessonProgress();
                         if (mounted) {
                           setState(() {});
-                          _snack('تم مسح تقدم قراءة الدروس');
+                          _snack('تم مسح تقدم الحلقات');
                         }
                       },
                     ),
-            icon: const Icon(Icons.menu_book_outlined),
-            label: Text('مسح تقدم الدروس ($readLessons)'),
+            icon: const Icon(Icons.play_circle_outline),
+            label: Text('مسح تقدم حلقات يوتيوب ($readLessons)'),
           ),
           const SizedBox(height: 24),
           const Text(
