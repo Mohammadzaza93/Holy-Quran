@@ -2,10 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../data/book_reference.dart';
+import '../data/book_lessons.dart';
 import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
+import 'book_lessons_screen.dart';
 import 'lessons_list_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
@@ -188,6 +191,31 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
             ),
             const SizedBox(height: 12),
+            // شرح كتاب «النور المبين» (ملخصات مع المرجع)
+            Card(
+              color: scheme.tertiaryContainer,
+              child: ListTile(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BookLessonsScreen()),
+                  );
+                  if (mounted) setState(() {});
+                },
+                leading: CircleAvatar(
+                  backgroundColor: scheme.tertiary,
+                  child: Icon(Icons.school, color: scheme.onTertiary),
+                ),
+                title: const Text('شرح كتاب «النور المبين»',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(
+                  '${allBookLessons.length} درساً من «${BookReference.title}» - ${BookReference.authorShort}',
+                  style: const TextStyle(height: 1.6),
+                ),
+                trailing: const Icon(Icons.chevron_left),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // وضع القراءة والتصحيح الصوتي
             Card(
               color: scheme.secondaryContainer,
               child: ListTile(
