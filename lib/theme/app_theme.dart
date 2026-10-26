@@ -33,20 +33,19 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: base,
       scaffoldBackgroundColor: AppColors.surface,
-      fontFamily: null,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 1,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: Colors.white,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
         color: AppColors.card,
@@ -54,7 +53,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
+          side: BorderSide(color: Color(0x0F000000)),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -70,7 +69,6 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
       ),
-      filledButtonThemeData: null,
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
@@ -84,8 +82,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       ),
-      dividerTheme: DividerThemeData(
-        color: Colors.black.withValues(alpha: 0.08),
+      dividerTheme: const DividerThemeData(
+        color: Color(0x14000000),
         thickness: 1,
         space: 28,
       ),
@@ -106,7 +104,7 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.12)),
+          borderSide: const BorderSide(color: Color(0x1F000000)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
