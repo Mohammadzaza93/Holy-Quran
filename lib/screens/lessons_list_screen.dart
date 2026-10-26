@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/lessons.dart';
 import '../models/lesson.dart';
 import '../services/storage_service.dart';
-import 'lesson_detail_screen.dart';
 
-/// قائمة سلسلة شروح التجويد المتتابعة مع تتبع التقدم.
+/// قائمة حلقات شرح التجويد المصور (يوتيوب — الشيخ أيمن سويد).
 class LessonsListScreen extends StatefulWidget {
   const LessonsListScreen({super.key});
 
@@ -14,6 +14,25 @@ class LessonsListScreen extends StatefulWidget {
 }
 
 class _LessonsListScreenState extends State<LessonsListScreen> {
+  Future<void> _openLesson(Lesson lesson) async {
+    final store = StorageService.instance;
+    await store.markLessonRead(lesson.id);
+
+    final uri = Uri.parse(lesson.youtubeUrl);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذّر فتح يوتيوب. تأكد من تثبيت التطبيق أو المتصفح.')),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openPlaylist() async {
+    final uri = Uri.parse(Lesson.playlistUrl);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -24,7 +43,14 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('سلسلة شروح التجويد'),
+        title: const Text('شرح التجويد المصور'),
+        actions: [
+          IconButton(
+            tooltip: 'فتح القائمة كاملة على يوتيوب',
+            icon: const Icon(Icons.playlist_play),
+            onPressed: _openPlaylist,
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -37,18 +63,22 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'شروح أصلية متتابعة',
+                    'شرح كتاب التجويد المصور',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
+                  Text(
+                    Lesson.attribution,
+                    style: const TextStyle(height: 1.6),
+                  ),
+                  const SizedBox(height: 8),
                   const Text(
-                    'مستندة إلى محاضرات الشيخ أيمن رشدي سويد – كتاب النور المبين في تجويد القرآن الكريم.\n'
-                    'يُفضَّل دراستها بالترتيب. تنبيه: هذه وسيلة مساعدة ولا تغني عن التلقي والمشافهة.',
-                    style: TextStyle(height: 1.6),
+                    'اضغط أي حلقة لفتحها مباشرة على يوتيوب. يُفضَّل المشاهدة بالترتيب.',
+                    style: TextStyle(height: 1.5, fontSize: 13),
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'تقدمك: $read من $total درسًا',
+                    'تقدمك: $read من $total حلقة',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
@@ -56,6 +86,12 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
                     value: progress,
                     minHeight: 8,
                     borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _openPlaylist,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('فتح قائمة التشغيل كاملة'),
                   ),
                 ],
               ),
@@ -66,7 +102,7 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
             _LessonTile(
               lesson: lesson,
               isRead: store.isLessonRead(lesson.id),
-              onOpened: () => setState(() {}),
+              onTap: () => _openLesson(lesson),
             ),
         ],
       ),
@@ -78,12 +114,12 @@ class _LessonTile extends StatelessWidget {
   const _LessonTile({
     required this.lesson,
     required this.isRead,
-    required this.onOpened,
+    required this.onTap,
   });
 
   final Lesson lesson;
   final bool isRead;
-  final VoidCallback onOpened;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -92,14 +128,7 @@ class _LessonTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
-        onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => LessonDetailScreen(lesson: lesson),
-            ),
-          );
-          onOpened();
-        },
+        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: isRead ? scheme.primary : scheme.primaryContainer,
@@ -122,14 +151,13 @@ class _LessonTile extends StatelessWidget {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            lesson.summary,
-            style: const TextStyle(height: 1.4),
-          ),
+          child: Text(lesson.summary, style: const TextStyle(height: 1.4)),
         ),
-        trailing: isRead
-            ? Icon(Icons.done_all, color: scheme.primary, size: 20)
-            : const Icon(Icons.chevron_left),
+        trailing: Icon(
+          Icons.play_circle_outline,
+          color: scheme.primary,
+          size: 28,
+        ),
       ),
     );
   }
