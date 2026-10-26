@@ -254,9 +254,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           OutlinedButton.icon(
             onPressed: _busy
                 ? null
-                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة.', () async {
+                : () => _confirm('مسح التقدم', 'سيتم حذف إحصائياتك وسجل الأخطاء ونتائج القراءة وتقدمك في الدروس.', () async {
                       await StorageService.instance.resetProgress();
                       await StorageService.instance.resetReading();
+                      await StorageService.instance.resetLessons();
                       if (mounted) _snack('تم مسح التقدم');
                     }),
             icon: const Icon(Icons.delete_outline),

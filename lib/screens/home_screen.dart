@@ -2,10 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../data/book_reference.dart';
+import '../data/lessons.dart';
 import '../models/question.dart';
 import '../services/connectivity_service.dart';
 import '../services/question_repository.dart';
 import '../services/storage_service.dart';
+import 'lessons_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
 import 'surah_list_screen.dart';
@@ -163,6 +166,30 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     Icon(Icons.emoji_events, size: 40, color: scheme.primary),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // دروس التجويد (شرح كتاب النور المبين)
+            Card(
+              color: scheme.tertiaryContainer,
+              child: ListTile(
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LessonsScreen()),
+                  );
+                  if (mounted) setState(() {});
+                },
+                leading: CircleAvatar(
+                  backgroundColor: scheme.tertiary,
+                  child: Icon(Icons.school, color: scheme.onTertiary),
+                ),
+                title: const Text('تعلّم التجويد',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(
+                  '${allLessons.length} درساً من «${BookReference.title}» - ${BookReference.authorShort}',
+                  style: const TextStyle(height: 1.6),
+                ),
+                trailing: const Icon(Icons.chevron_left),
               ),
             ),
             const SizedBox(height: 12),

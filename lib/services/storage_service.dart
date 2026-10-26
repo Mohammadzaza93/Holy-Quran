@@ -110,6 +110,25 @@ class StorageService {
     }
   }
 
+  // ───────── الدروس (تعلّم التجويد) ─────────
+
+  /// هل أنهى المستخدم الدرس؟
+  bool isLessonRead(String id) => _p.getBool('lesson_$id') ?? false;
+
+  Future<void> setLessonRead(String id, bool value) async {
+    if (value) {
+      await _p.setBool('lesson_$id', true);
+    } else {
+      await _p.remove('lesson_$id');
+    }
+  }
+
+  Future<void> resetLessons() async {
+    for (final k in _p.getKeys().where((k) => k.startsWith('lesson_')).toList()) {
+      await _p.remove(k);
+    }
+  }
+
   // ───────── حزمة الأسئلة المحمّلة من الإنترنت ─────────
   List<Question> remoteQuestions() {
     final raw = _p.getString('remote_pack');
