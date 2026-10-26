@@ -32,7 +32,8 @@ class SpeechService {
       );
       if (!ok) {
         // الفشل إما لرفض إذن الميكروفون أو لعدم وجود خدمة تعرف على الجهاز
-        return _stt.hasPermission ? SpeechInit.unavailable : SpeechInit.noPermission;
+        final granted = await _stt.hasPermission;
+        return granted ? SpeechInit.unavailable : SpeechInit.noPermission;
       }
       _initialized = true;
     }
