@@ -89,11 +89,15 @@ class ReferenceScreen extends StatelessWidget {
                     style: TextStyle(height: 1.7),
                   ),
                   const SizedBox(height: 6),
+                  const SizedBox(height: 2),
                   for (final w in BookReference.appendixWorks)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text('• $w', style: const TextStyle(height: 1.7)),
                     ),
+                  const SizedBox(height: 8),
+                  const Text(BookReference.structureNote,
+                      style: TextStyle(height: 1.7, fontSize: 13.5)),
                 ],
               ),
             ),
