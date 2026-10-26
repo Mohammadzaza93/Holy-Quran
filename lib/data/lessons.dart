@@ -20,7 +20,7 @@ final List<Lesson> tajweedLessons = [
   Lesson(id: 'ep-14', order: 14, title: 'نصائح لأهل القرآن', summary: 'الحلقة 14 — توجيهات', youtubeVideoId: 'Y7Y7g3GIl7Y'),
   Lesson(id: 'ep-15', order: 15, title: 'اللين', summary: 'الحلقة 15 — باب الصفات', youtubeVideoId: 'OJDGrpOFyw8', relatedCategory: 'sifat'),
   Lesson(id: 'ep-16', order: 16, title: 'الغنة صفةً', summary: 'الحلقة 16 — باب الصفات', youtubeVideoId: 'I3-IOD49WgE', relatedCategory: 'noon'),
-  Lesson(id: 'ep-17', order: 17, title: 'أبرز أخطاء نطق حروف الهجاء', summary: 'الحلقة 17 — تنبيهات', youtubeVideoId: ' _2RZIEq0t6s'.trim(), relatedCategory: 'makharij'),
+  Lesson(id: 'ep-17', order: 17, title: 'أبرز أخطاء نطق حروف الهجاء', summary: 'الحلقة 17 — تنبيهات', youtubeVideoId: '_2RZIEq0t6s', relatedCategory: 'makharij'),
   Lesson(id: 'ep-18', order: 18, title: 'إتمام الحركات', summary: 'الحلقة 18', youtubeVideoId: '-LxbHpJs9bw'),
   Lesson(id: 'ep-19', order: 19, title: 'الوقف والابتداء', summary: 'الحلقة 19', youtubeVideoId: 'tOW9ZVAI0eU', relatedCategory: 'misc'),
   Lesson(id: 'ep-20', order: 20, title: 'الوقف والابتداء — تنبيهات', summary: 'الحلقة 20', youtubeVideoId: 'bteuCHz-mRM', relatedCategory: 'misc'),
