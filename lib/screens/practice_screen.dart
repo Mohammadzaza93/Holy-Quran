@@ -7,6 +7,7 @@ import '../data/surahs.dart';
 import '../services/connectivity_service.dart';
 import '../services/mushaf_service.dart';
 import '../services/quran_service.dart';
+import '../services/lahn_jali.dart';
 import '../services/recitation_checker.dart';
 import '../services/speech_service.dart';
 import '../services/storage_service.dart';
@@ -626,6 +627,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 ],
               ),
               ..._details(r),
+              ..._lahnSection(r),
               const Divider(height: 24),
               const Text(
                 'التتبع الحي يعتمد Edit Distance على الكلمات بعد توحيد الرسم. أحكام التجويد الدقيقة تحتاج مقرئاً.',
@@ -682,5 +684,97 @@ class _PracticeScreenState extends State<PracticeScreen> {
           child: Text('• $l', style: const TextStyle(height: 1.6)),
         ),
     ];
+  }
+
+  /// قسم «اللحن الجلي»: ما يُشتبه فيه في الحروف والكلمات، مع تنبيه على حدّ الرصد في الحركات.
+  List<Widget> _lahnSection(RecitationResult r) {
+    final letters = r.lahn.where((f) => f.category == LahnCategory.letters).toList();
+    final words = r.lahn.where((f) => f.category == LahnCategory.words).toList();
+
+    Widget group(String title, List<LahnFinding> list) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            for (final f in list)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, right: 6),
+                child: Text(
+                  '• ${f.title}: ${f.description}${f.hint == null ? '' : '\n   ${f.hint}'}',
+                  style: const TextStyle(height: 1.6),
+                ),
+              ),
+          ],
+        );
+
+    return [
+      const SizedBox(height: 14),
+      Row(
+        children: [
+          const Expanded(
+            child: Text('اللحن الجلي (اشتباه)', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          IconButton(
+            tooltip: 'ما هو اللحن الجلي؟',
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showLahnInfo,
+          ),
+        ],
+      ),
+      if (r.lahn.isEmpty)
+        const Text(
+          'لم يُرصد لحن جلي في الحروف أو الكلمات.',
+          style: TextStyle(height: 1.6),
+        )
+      else ...[
+        if (letters.isNotEmpty) group('في الحروف', letters),
+        if (words.isNotEmpty) group('في الكلمات', words),
+        const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Text(
+            'هذا اشتباه من التعرف الصوتي وقد يكون خطأ في السماع؛ استمع للقارئ وأعد الآية للتأكد.',
+            style: TextStyle(fontSize: 12.5, height: 1.6, color: Colors.black54),
+          ),
+        ),
+      ],
+      const Padding(
+        padding: EdgeInsets.only(top: 6),
+        child: Text(
+          'اللحن في الحركات لا يمكن رصده آلياً لأن التعرف الصوتي لا يعيد التشكيل.',
+          style: TextStyle(fontSize: 12.5, height: 1.6, color: Colors.black54),
+        ),
+      ),
+    ];
+  }
+
+  void _showLahnInfo() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('اللحن الجلي'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(LahnJali.definition, style: TextStyle(height: 1.7)),
+              const SizedBox(height: 10),
+              for (final f in LahnJali.forms)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('• $f', style: const TextStyle(height: 1.7)),
+                ),
+              const SizedBox(height: 6),
+              const Text(LahnJali.limit,
+                  style: TextStyle(fontSize: 13, height: 1.7, color: Colors.black54)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('حسناً')),
+        ],
+      ),
+    );
   }
 }
