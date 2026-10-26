@@ -9,24 +9,21 @@ library;
 class ArabicText {
   ArabicText._();
 
-  // علامات التشكيل والعلامات القرآنية والتطويل
-  static final RegExp _marks =
-      RegExp('[ؐ-ًؚ-ٰٟۖ-ۭـ​-‏]');
+  static final RegExp _marks = RegExp('[ؐ-ًؚ-ٰٟۖ-ۭـ​-‏]');
   static final RegExp _notLetters = RegExp('[^ء-ي\\s]');
   static final RegExp _spaces = RegExp(r'\s+');
 
-  /// يوحّد النص العربي لأغراض المقارنة.
   static String normalize(String input) {
     var s = input.replaceAll(_marks, '');
     s = s
-        .replaceAll(RegExp('[أإآٱ]'), 'ا') // أ إ آ ٱ -> ا
-        .replaceAll('ى', 'ي') // ى -> ي
-        .replaceAll('ی', 'ي') // ی -> ي
-        .replaceAll('ک', 'ك') // ک -> ك
-        .replaceAll('ة', 'ه') // ة -> ه
-        .replaceAll('ؤ', 'و') // ؤ -> و
-        .replaceAll('ئ', 'ي') // ئ -> ي
-        .replaceAll('ء', ''); // ء
+        .replaceAll(RegExp('[أإآٱ]'), 'ا')
+        .replaceAll('ى', 'ي')
+        .replaceAll('ی', 'ي')
+        .replaceAll('ک', 'ك')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ؤ', 'و')
+        .replaceAll('ئ', 'ي')
+        .replaceAll('ء', '');
     s = s.replaceAll(_notLetters, ' ');
     return s.replaceAll(_spaces, ' ').trim();
   }
@@ -36,7 +33,6 @@ class ArabicText {
     return n.isEmpty ? <String>[] : n.split(' ');
   }
 
-  /// كلمات العرض (بالتشكيل) التي لها حروف فعلية، أي نستبعد رموز مثل ۩.
   static List<String> displayWords(String input) {
     return input
         .split(RegExp(r'\s+'))
@@ -45,7 +41,16 @@ class ArabicText {
   }
 }
 
-enum WordStatus { correct, near, wrong, missing }
+enum WordStatus {
+  /// لم تُقرأ بعد (أثناء التتبع الحي)
+  pending,
+  /// الكلمة الحالية التي يُتوقَّع نطقها الآن
+  current,
+  correct,
+  near,
+  wrong,
+  missing,
+}
 
 class WordResult {
   const WordResult({
@@ -55,14 +60,9 @@ class WordResult {
     this.heard,
   });
 
-  /// الكلمة كما تُعرض (بالتشكيل)
   final String display;
-
-  /// الكلمة المتوقعة بعد التوحيد
   final String expected;
   final WordStatus status;
-
-  /// ما سمعه التعرف الصوتي بدلاً منها (إن وُجد)
   final String? heard;
 }
 
@@ -78,25 +78,39 @@ class RecitationResult {
   });
 
   final List<WordResult> words;
-
-  /// كلمات نُطقت زيادة عن الآية
   final List<String> extras;
   final int correct;
   final int near;
   final int wrong;
   final int missing;
-
-  /// نسبة من 0 إلى 1
   final double score;
 
   bool get isPerfect => wrong == 0 && missing == 0 && extras.isEmpty && near == 0;
   bool get nothingHeard => correct == 0 && near == 0 && wrong == 0 && extras.isEmpty;
 }
 
+/// نتيجة التتبع الحي: مؤشر الكلمة الحالية + حالات الكلمات حتى الآن.
+class LiveTrackResult {
+  const LiveTrackResult({
+    required this.words,
+    required this.cursor,
+    required this.matchedCount,
+    required this.score,
+  });
+
+  final List<WordResult> words;
+
+  /// فهرس الكلمة المتوقعة التالية (0..n). إن = n فقد اكتملت الآية تقريباً.
+  final int cursor;
+  final int matchedCount;
+  final double score;
+
+  bool get isComplete => cursor >= words.length && words.isNotEmpty;
+}
+
 class RecitationChecker {
   RecitationChecker._();
 
-  /// أقل نسبة تشابه بين حرفين كلمتين لنعدّ الكلمة «قريبة» (قد يكون الفرق من التعرف لا من القارئ)
   static const double nearThreshold = 0.7;
 
   static double similarity(String a, String b) {
@@ -125,8 +139,7 @@ class RecitationChecker {
     return prev[b.length];
   }
 
-  /// [expectedText]: نص الآية (يفضّل بالرسم الإملائي المشكول ليظهر التشكيل في النتيجة).
-  /// [heardText]: ما أعاده التعرف الصوتي.
+  /// مقارنة نهائية كاملة بعد انتهاء التلاوة.
   static RecitationResult compare(String expectedText, String heardText) {
     final display = ArabicText.displayWords(expectedText);
     final exp = display.map(ArabicText.normalize).toList();
@@ -134,7 +147,6 @@ class RecitationChecker {
     final n = exp.length;
     final m = heard.length;
 
-    // مصفوفة تكلفة المحاذاة (Needleman-Wunsch على مستوى الكلمات)
     const double del = 1, ins = 1, wrongSub = 1, nearSub = 0.5;
     double subCost(String e, String h) {
       if (e == h) return 0;
@@ -157,7 +169,6 @@ class RecitationChecker {
       }
     }
 
-    // التتبع العكسي
     final results = List<WordResult?>.filled(n, null);
     final extrasRev = <String>[];
     var i = n, j = m;
@@ -188,7 +199,6 @@ class RecitationChecker {
         i--;
         continue;
       }
-      // كلمة زائدة
       extrasRev.add(heard[j - 1]);
       j--;
     }
@@ -210,6 +220,96 @@ class RecitationChecker {
       near: near,
       wrong: wrong,
       missing: missing,
+      score: score,
+    );
+  }
+
+  /// تتبع حي تقدّمي: يطابق الكلمات المسموعة بالترتيب ويضع مؤشراً على الكلمة التالية.
+  ///
+  /// يستخدم نافذة أمامية صغيرة (مثل أنظمة التتبع المفتوحة) لتحمل أخطاء ASR.
+  static LiveTrackResult trackLive(String expectedText, String heardText) {
+    final display = ArabicText.displayWords(expectedText);
+    final exp = display.map(ArabicText.normalize).toList();
+    final heard = ArabicText.words(heardText);
+    final n = exp.length;
+
+    if (n == 0) {
+      return const LiveTrackResult(words: [], cursor: 0, matchedCount: 0, score: 0);
+    }
+
+    // حالات أولية: الكل pending
+    final statuses = List<WordStatus>.filled(n, WordStatus.pending);
+    final heards = List<String?>.filled(n, null);
+
+    var cursor = 0;
+    var matched = 0;
+    var correctN = 0;
+    var nearN = 0;
+
+    // نافذة بحث أمامية لتحمل إدخالات زائدة من ASR
+    const lookAhead = 3;
+
+    for (final h in heard) {
+      if (cursor >= n) break;
+
+      // ابحث أفضل تطابق في [cursor, cursor+lookAhead]
+      var bestIdx = -1;
+      var bestSim = -1.0;
+      final end = (cursor + lookAhead + 1).clamp(0, n);
+      for (var k = cursor; k < end; k++) {
+        final sim = similarity(exp[k], h);
+        if (sim > bestSim) {
+          bestSim = sim;
+          bestIdx = k;
+        }
+      }
+
+      if (bestIdx < 0 || bestSim < 0.45) {
+        // كلمة زائدة من ASR — نتجاهلها في التتبع الحي
+        continue;
+      }
+
+      // كلمات بين cursor و bestIdx = متروكة
+      for (var k = cursor; k < bestIdx; k++) {
+        statuses[k] = WordStatus.missing;
+      }
+
+      if (bestSim >= 0.92) {
+        statuses[bestIdx] = WordStatus.correct;
+        correctN++;
+      } else if (bestSim >= nearThreshold) {
+        statuses[bestIdx] = WordStatus.near;
+        heards[bestIdx] = h;
+        nearN++;
+      } else {
+        statuses[bestIdx] = WordStatus.wrong;
+        heards[bestIdx] = h;
+      }
+      matched++;
+      cursor = bestIdx + 1;
+    }
+
+    // الكلمة التالية = current إن بقي شيء
+    if (cursor < n) {
+      statuses[cursor] = WordStatus.current;
+    }
+
+    final words = <WordResult>[
+      for (var i = 0; i < n; i++)
+        WordResult(
+          display: display[i],
+          expected: exp[i],
+          status: statuses[i],
+          heard: heards[i],
+        ),
+    ];
+
+    final score = matched == 0 ? 0.0 : ((correctN + 0.5 * nearN) / n).clamp(0.0, 1.0);
+
+    return LiveTrackResult(
+      words: words,
+      cursor: cursor,
+      matchedCount: matched,
       score: score,
     );
   }
