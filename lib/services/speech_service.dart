@@ -5,10 +5,10 @@ import 'storage_service.dart';
 
 enum SpeechInit { ready, noPermission, unavailable, noArabic }
 
-/// غلاف بسيط حول حزمة speech_to_text (محرك التعرف الصوتي الموجود في نظام الجهاز).
+/// غلاف حول حزمة speech_to_text (محرك التعرف الصوتي في نظام الجهاز).
 ///
-/// ملاحظة: جودة التعرف على العربية تعتمد على محرك الجهاز (Google على أندرويد، Apple على iOS)،
-/// وهو غالباً يحتاج إنترنت إلا إذا فعّلت «التعرف على الجهاز» وكانت حزمة العربية محمّلة.
+/// جودة العربية تعتمد على محرك الجهاز (Google / Apple).
+/// كثير من الأجهزة لا تُرجع العربية في قائمة اللغات رغم أنها تعمل — نجرّب ar_SA دائماً.
 class SpeechService {
   SpeechService._();
   static final SpeechService instance = SpeechService._();
@@ -16,12 +16,15 @@ class SpeechService {
   final SpeechToText _stt = SpeechToText();
   bool _initialized = false;
   String? _localeId;
+  bool _localeAnnounced = false;
 
-  /// يستدعيهما الشاشة الحالية لتعرف حالة المحرك
   void Function(String status)? onStatus;
   void Function(String message)? onError;
 
   bool get isListening => _stt.isListening;
+
+  /// هل أعلن الجهاز وجود لغة عربية في قائمة locales؟
+  bool get localeAnnounced => _localeAnnounced;
 
   Future<SpeechInit> init() async {
     if (!_initialized) {
@@ -31,27 +34,24 @@ class SpeechService {
         debugLogging: false,
       );
       if (!ok) {
-        // الفشل إما لرفض إذن الميكروفون أو لعدم وجود خدمة تعرف على الجهاز
-        return await _stt.hasPermission ? SpeechInit.unavailable : SpeechInit.noPermission;
+        final granted = await _stt.hasPermission;
+        return granted ? SpeechInit.unavailable : SpeechInit.noPermission;
       }
       _initialized = true;
     }
-    // لا نمنع المستخدم إن لم تُظهر قائمة اللغات العربية: كثير من الأجهزة (شاومي وغيرها) تعيد
-    // قائمة ناقصة أو فارغة مع أن التعرف بالعربية يعمل. نجرّب «ar_SA» فإن فشل ظهر خطأ اللغة عند التسجيل.
     _localeId ??= await _pickArabicLocale();
+    // لا نرجع noArabic هنا: أجهزة كثيرة (شاومي/هواوي) لا تُدرج العربية في locales
+    // رغم أن التعرف يعمل عند تمرير ar_SA.
     return SpeechInit.ready;
   }
 
-  /// معرّف اللغة الذي اختاره الجهاز فعلاً؟ (false = جرّبنا ar_SA دون أن يعلنها الجهاز)
-  bool get localeAnnounced => _localeAnnounced;
-  bool _localeAnnounced = false;
-
-  Future<String?> _pickArabicLocale() async {
+  Future<String> _pickArabicLocale() async {
     List<LocaleName> locales = const [];
     try {
       locales = await _stt.locales();
     } catch (_) {}
-    final arabic = locales.where((l) => l.localeId.toLowerCase().startsWith('ar')).toList();
+    final arabic =
+        locales.where((l) => l.localeId.toLowerCase().startsWith('ar')).toList();
     if (arabic.isEmpty) {
       _localeAnnounced = false;
       return 'ar_SA';
@@ -68,7 +68,8 @@ class SpeechService {
   Future<void> start({required void Function(String words, bool isFinal) onWords}) async {
     await _stt.listen(
       onResult: (r) => onWords(r.recognizedWords, r.finalResult),
-      localeId: _localeId,
+      // بعض إصدارات الحزمة ما زالت تتوقع هذه المعاملات على المستوى الأعلى
+      localeId: _localeId ?? 'ar_SA',
       listenFor: const Duration(seconds: 90),
       pauseFor: const Duration(seconds: 5),
       listenOptions: SpeechListenOptions(
