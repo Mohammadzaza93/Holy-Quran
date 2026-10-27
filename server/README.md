@@ -21,3 +21,13 @@ bash server/run.sh
 ## واجهة الخادم
 `POST /correct-recitation` (multipart): الحقل `file` (WAV). يعيد `uthmani_text` و`errors`
 (نوعها `tashkeel` للحركات، `tajweed`، `normal`)، أو 404 إن لم تُطابق آية.
+
+## الاستضافة على Hugging Face Spaces (مجاناً)
+1. أنشئ حساباً على huggingface.co ثم **New Space** ← SDK: **Docker** ← الجهاز: **CPU basic (free)**.
+2. ارفع إلى الـSpace (من صفحة Files ← Add file، أو بـgit) هذه الملفات من مجلد `server/`:
+   `Dockerfile` و`start.sh`، وانسخ `SPACE_README.md` باسم `README.md`.
+3. انتظر انتهاء البناء (عدة دقائق)، وأول تشغيل ينزّل النموذج (نحو 3 جيجابايت) فيتأخر.
+4. رابط الـSpace من القائمة ⋮ ← **Embed this Space** ← *Direct URL*، مثل
+   `https://اسمك-اسم-الـspace.hf.space`. ضعه في التطبيق ثم اضغط «اختبار».
+- المستوى المجاني ينام عند الخمول (أول طلب بعده بطيء)، والتحليل على المعالج بطيء.
+- الـSpace العام يراه الجميع؛ اجعله Private إن أردت، وحينها يحتاج التطبيق رمز وصول (غير مدعوم حالياً).
