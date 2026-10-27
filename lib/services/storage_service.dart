@@ -142,6 +142,9 @@ class StorageService extends ChangeNotifier {
   String get remoteUrl => _p.getString('remote_url') ?? '';
   Future<void> setRemoteUrl(String v) => _p.setString('remote_url', v);
 
+  String get muaalemUrl => _p.getString('muaalem_url') ?? '';
+  Future<void> setMuaalemUrl(String v) => _p.setString('muaalem_url', v);
+
   bool get onDeviceSpeech => _p.getBool('speech_on_device') ?? false;
   Future<void> setOnDeviceSpeech(bool v) async {
     await _p.setBool('speech_on_device', v);

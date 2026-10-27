@@ -8,6 +8,7 @@ import '../services/connectivity_service.dart';
 import '../services/mushaf_service.dart';
 import '../services/quran_service.dart';
 import '../services/lahn_jali.dart';
+import 'advanced_check_screen.dart';
 import '../services/recitation_checker.dart';
 import '../services/speech_service.dart';
 import '../services/storage_service.dart';
@@ -628,6 +629,16 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ),
               ..._details(r),
               ..._lahnSection(r),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AdvancedCheckScreen()),
+                  ),
+                  icon: const Icon(Icons.graphic_eq),
+                  label: const Text('فحص متقدم للحركات (تجريبي)'),
+                ),
+              ),
               const Divider(height: 24),
               const Text(
                 'التتبع الحي يعتمد Edit Distance على الكلمات بعد توحيد الرسم. أحكام التجويد الدقيقة تحتاج مقرئاً.',
