@@ -22,12 +22,10 @@ bash server/run.sh
 `POST /correct-recitation` (multipart): الحقل `file` (WAV). يعيد `uthmani_text` و`errors`
 (نوعها `tashkeel` للحركات، `tajweed`، `normal`)، أو 404 إن لم تُطابق آية.
 
-## الاستضافة على Hugging Face Spaces (مجاناً)
-1. أنشئ حساباً على huggingface.co ثم **New Space** ← SDK: **Docker** ← الجهاز: **CPU basic (free)**.
-2. ارفع إلى الـSpace (من صفحة Files ← Add file، أو بـgit) هذه الملفات من مجلد `server/`:
-   `Dockerfile` و`start.sh`، وانسخ `SPACE_README.md` باسم `README.md`.
-3. انتظر انتهاء البناء (عدة دقائق)، وأول تشغيل ينزّل النموذج (نحو 3 جيجابايت) فيتأخر.
-4. رابط الـSpace من القائمة ⋮ ← **Embed this Space** ← *Direct URL*، مثل
-   `https://اسمك-اسم-الـspace.hf.space`. ضعه في التطبيق ثم اضغط «اختبار».
-- المستوى المجاني ينام عند الخمول (أول طلب بعده بطيء)، والتحليل على المعالج بطيء.
-- الـSpace العام يراه الجميع؛ اجعله Private إن أردت، وحينها يحتاج التطبيق رمز وصول (غير مدعوم حالياً).
+## استضافة مجانية على Google Colab (موصى بها)
+> Hugging Face Spaces لم تعد تدعم Docker مجاناً (يحتاج اشتراكاً).
+1. افتح `server/colab.ipynb` في colab.research.google.com (File ← Upload، أو من GitHub).
+2. فعّل GPU: Runtime ← Change runtime type ← T4.
+3. شغّل الخلايا بالترتيب (الأولى ثقيلة: نحو 5-10 دقائق مع تنزيل النموذج).
+4. انسخ رابط `trycloudflare.com` الذي يظهر وضعه في التطبيق ثم «اختبار».
+- مؤقت: يتوقف عند الخمول وتتغيّر الرابط في كل تشغيل. الرابط عام لمن يعرفه.
