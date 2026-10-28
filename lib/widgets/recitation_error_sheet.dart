@@ -23,100 +23,119 @@ Future<void> showRecitationErrorSheet({
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
     builder: (ctx) {
+      final maxH = MediaQuery.sizeOf(ctx).height * 0.72;
       return SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                focusWord != null
-                    ? 'خيارات · «${focusWord.display}» — آية $ayahNumber'
-                    : 'خيارات المساعدة — آية $ayahNumber',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.volume_up_rounded),
-              title: const Text('استمع'),
-              subtitle: const Text('تشغيل تلاوة القارئ المرجعية'),
-              onTap: () {
-                Navigator.pop(ctx);
-                onListen();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.mic_rounded),
-              title: const Text('أعد التسميع'),
-              onTap: () {
-                Navigator.pop(ctx);
-                onRetryMic();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.translate_rounded),
-              title: const Text('ترجمة'),
-              subtitle: const Text('محلياً بعد التحميل من الإعدادات'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCachedOrFetch(
-                  context,
-                  title: 'ترجمة الآية',
-                  surah: surahNumber,
-                  ayah: ayahNumber,
-                  kind: _TextKind.translation,
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.menu_book_rounded),
-              title: const Text('تفسير'),
-              subtitle: const Text('الميسّر — محلياً بعد التحميل'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showCachedOrFetch(
-                  context,
-                  title: 'التفسير الميسّر',
-                  surah: surahNumber,
-                  ayah: ayahNumber,
-                  kind: _TextKind.tafsir,
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
-              title: Text(bookmarked ? 'إزالة الإشارة المرجعية' : 'أضف إشارة مرجعية'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                if (bookmarked) {
-                  await store.removeAyahBookmark(surahNumber, ayahNumber);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('أُزيلت الإشارة المرجعية')),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxH),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+                  child: Text(
+                    focusWord != null
+                        ? 'خيارات · «${focusWord.display}» — آية $ayahNumber'
+                        : 'خيارات المساعدة — آية $ayahNumber',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.volume_up_rounded),
+                  title: const Text('استمع'),
+                  subtitle: const Text('تشغيل تلاوة القارئ المرجعية'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onListen();
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.mic_rounded),
+                  title: const Text('أعد التسميع'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    onRetryMic();
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.translate_rounded),
+                  title: const Text('ترجمة'),
+                  subtitle: const Text('محلياً بعد التحميل من الإعدادات'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showCachedOrFetch(
+                      context,
+                      title: 'ترجمة الآية',
+                      surah: surahNumber,
+                      ayah: ayahNumber,
+                      kind: _TextKind.translation,
                     );
-                  }
-                } else {
-                  await store.addAyahBookmark(surahNumber, ayahNumber);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تمت إضافة إشارة مرجعية')),
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.menu_book_rounded),
+                  title: const Text('تفسير'),
+                  subtitle: const Text('الميسّر — محلياً بعد التحميل'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showCachedOrFetch(
+                      context,
+                      title: 'التفسير الميسّر',
+                      surah: surahNumber,
+                      ayah: ayahNumber,
+                      kind: _TextKind.tafsir,
                     );
-                  }
-                }
-              },
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: Icon(bookmarked ? Icons.bookmark : Icons.bookmark_border),
+                  title: Text(bookmarked ? 'إزالة الإشارة المرجعية' : 'أضف إشارة مرجعية'),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    if (bookmarked) {
+                      await store.removeAyahBookmark(surahNumber, ayahNumber);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('أُزيلت الإشارة المرجعية')),
+                        );
+                      }
+                    } else {
+                      await store.addAyahBookmark(surahNumber, ayahNumber);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تمت إضافة إشارة مرجعية')),
+                        );
+                      }
+                    }
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  leading: const Icon(Icons.compare_arrows_rounded),
+                  title: const Text('المتشابهات'),
+                  subtitle: const Text('مواضع مشابهة في نفس السورة'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showSimilar(context, surahAyat, ayahNumber, focusWord);
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.compare_arrows_rounded),
-              title: const Text('المتشابهات'),
-              subtitle: const Text('مواضع مشابهة في نفس السورة'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showSimilar(context, surahAyat, ayahNumber, focusWord);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
       );
     },
@@ -138,12 +157,10 @@ Future<void> _showCachedOrFetch(
     builder: (_) => const Center(child: CircularProgressIndicator()),
   );
 
-  // 1) محلي فقط أولاً
   String? text = kind == _TextKind.tafsir
       ? await AyahTextService.getTafsir(surah, ayah, allowNetwork: false)
       : await AyahTextService.getTranslation(surah, ayah, allowNetwork: false);
 
-  // 2) إن لم يوجد والشبكة متاحة: حمّل السورة كاملة واحفظها
   if (text == null && await ConnectivityService.isOnline()) {
     text = kind == _TextKind.tafsir
         ? await AyahTextService.getTafsir(surah, ayah, allowNetwork: true)
@@ -155,7 +172,7 @@ Future<void> _showCachedOrFetch(
 
   final body = text ??
       'النص غير محمّل على الجهاز.\n\n'
-          'من الإعدادات ← «حفظ التفسير والترجمة للعمل دون اتصال» '
+          'من الإعدادات ← «حفظ التفسير والترجمة دون اتصال» '
           'أو اتصل بالإنترنت مرة واحدة لجلب هذه السورة تلقائياً.';
 
   await showDialog<void>(
