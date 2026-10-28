@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import '../data/surahs.dart';
 import '../services/mushaf_service.dart';
 import '../services/storage_service.dart';
+import '../widgets/app_skeleton.dart';
 import 'practice_screen.dart';
 
-/// تقرير ضعف الحفظ في سورة واحدة:
-/// يصنّف الآيات إلى: لم تُقرأ / ضعيفة / جيدة / متقنة
-/// ويسمح بالانتقال مباشرة لممارسة الآيات الضعيفة.
+/// تقرير ضعف الحفظ في سورة واحدة.
 class MemorizationReportScreen extends StatefulWidget {
   const MemorizationReportScreen({super.key, required this.surahNumber});
 
@@ -40,7 +39,7 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
   bool _loading = true;
   bool _failed = false;
   List<_AyahRow> _rows = const [];
-  String _filter = 'all'; // all | weak | unread
+  String _filter = 'all';
 
   static const double _weakBelow = 0.8;
   static const double _masteredAt = 0.9;
@@ -95,7 +94,9 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
   List<_AyahRow> get _visible {
     switch (_filter) {
       case 'weak':
-        return _rows.where((r) => r.level == _AyahLevel.weak || r.level == _AyahLevel.unread).toList();
+        return _rows
+            .where((r) => r.level == _AyahLevel.weak || r.level == _AyahLevel.unread)
+            .toList();
       case 'unread':
         return _rows.where((r) => r.level == _AyahLevel.unread).toList();
       default:
@@ -115,7 +116,9 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
   }
 
   Future<void> _practiceWeak() async {
-    final weak = _rows.where((r) => r.level == _AyahLevel.weak || r.level == _AyahLevel.unread).toList();
+    final weak = _rows
+        .where((r) => r.level == _AyahLevel.weak || r.level == _AyahLevel.unread)
+        .toList();
     if (weak.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('لا توجد آيات ضعيفة أو غير مقروءة')),
@@ -142,7 +145,7 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppSkeletonList(count: 10)
           : _failed
               ? Center(
                   child: Padding(
@@ -229,7 +232,10 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'ضعيفة = أقل من ${(_weakBelow * 100).round()}%  ·  متقنة = ${(_masteredAt * 100).round()}% فأكثر',
-                  style: TextStyle(fontSize: 12, color: scheme.onPrimaryContainer.withValues(alpha: 0.8)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onPrimaryContainer.withOpacity(0.8),
+                  ),
                 ),
               ],
             ),
@@ -239,8 +245,16 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
         SegmentedButton<String>(
           segments: const [
             ButtonSegment(value: 'all', label: Text('الكل'), icon: Icon(Icons.list)),
-            ButtonSegment(value: 'weak', label: Text('الضعيفة'), icon: Icon(Icons.warning_amber)),
-            ButtonSegment(value: 'unread', label: Text('لم تُقرأ'), icon: Icon(Icons.radio_button_unchecked)),
+            ButtonSegment(
+              value: 'weak',
+              label: Text('الضعيفة'),
+              icon: Icon(Icons.warning_amber),
+            ),
+            ButtonSegment(
+              value: 'unread',
+              label: Text('لم تُقرأ'),
+              icon: Icon(Icons.radio_button_unchecked),
+            ),
           ],
           selected: {_filter},
           onSelectionChanged: (s) => setState(() => _filter = s.first),
@@ -260,8 +274,11 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
   Widget _statChip(String label, int count, Color color) {
     return Chip(
       avatar: CircleAvatar(
-        backgroundColor: color.withValues(alpha: 0.15),
-        child: Text('$count', style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold)),
+        backgroundColor: color.withOpacity(0.15),
+        child: Text(
+          '$count',
+          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold),
+        ),
       ),
       label: Text(label),
       visualDensity: VisualDensity.compact,
@@ -271,14 +288,26 @@ class _MemorizationReportScreenState extends State<MemorizationReportScreen> {
   Widget _ayahTile(_AyahRow row, ColorScheme scheme) {
     final (Color bg, String label, IconData icon) = switch (row.level) {
       _AyahLevel.unread => (Colors.grey.shade200, 'لم تُقرأ', Icons.radio_button_unchecked),
-      _AyahLevel.weak => (const Color(0xFFF8D7D7), 'ضعيفة ${((row.score ?? 0) * 100).round()}%', Icons.error_outline),
-      _AyahLevel.good => (const Color(0xFFFFF1C2), 'جيدة ${((row.score ?? 0) * 100).round()}%', Icons.trending_up),
-      _AyahLevel.mastered => (const Color(0xFFD7F0DD), 'متقنة ${((row.score ?? 0) * 100).round()}%', Icons.verified),
+      _AyahLevel.weak => (
+          const Color(0xFFF8D7D7),
+          'ضعيفة ${((row.score ?? 0) * 100).round()}%',
+          Icons.error_outline
+        ),
+      _AyahLevel.good => (
+          const Color(0xFFFFF1C2),
+          'جيدة ${((row.score ?? 0) * 100).round()}%',
+          Icons.trending_up
+        ),
+      _AyahLevel.mastered => (
+          const Color(0xFFD7F0DD),
+          'متقنة ${((row.score ?? 0) * 100).round()}%',
+          Icons.verified
+        ),
     };
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: bg.withValues(alpha: 0.55),
+      color: bg.withOpacity(0.55),
       child: ListTile(
         onTap: () => _openPractice(row.index),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
