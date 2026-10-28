@@ -22,7 +22,7 @@ class TajweedApp extends StatelessWidget {
       builder: (context, _) {
         final store = StorageService.instance;
         return MaterialApp(
-          title: 'تجويد حفص',
+          title: 'إتقان',
           debugShowCheckedModeBanner: false,
           locale: const Locale('ar'),
           supportedLocales: const [Locale('ar')],
