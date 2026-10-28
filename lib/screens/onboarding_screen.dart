@@ -1,152 +1,96 @@
 import 'package:flutter/material.dart';
+import 'package:introduction_screen/introduction_screen.dart';
 
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import 'home_screen.dart';
 
-/// شاشة ترحيب لأول تشغيل: تعلّم → اختبر → سمّع.
-class OnboardingScreen extends StatefulWidget {
+/// شاشة ترحيب لأول تشغيل باستخدام introduction_screen.
+class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
-  @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final _page = PageController();
-  int _index = 0;
-
-  static const _pages = [
-    (
-      Icons.play_circle_fill_rounded,
-      'تعلّم',
-      'شاهد حلقات شرح التجويد المصور للشيخ أيمن سويد على يوتيوب بالترتيب.',
-    ),
-    (
-      Icons.quiz_rounded,
-      'اختبر',
-      'راجع أحكام التجويد برواية حفص عبر أسئلة متنوعة ومراجعة ذكية للأخطاء.',
-    ),
-    (
-      Icons.mic_rounded,
-      'سمّع',
-      'اقرأ الآية والتصحيح يتابعك كلمة بكلمة — مجاناً وعلى جهازك قدر الإمكان.',
-    ),
-  ];
-
-  Future<void> _finish() async {
+  Future<void> _finish(BuildContext context) async {
     await StorageService.instance.setOnboardingDone(true);
-    if (!mounted) return;
+    if (!context.mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
   }
 
-  @override
-  void dispose() {
-    _page.dispose();
-    super.dispose();
+  PageViewModel _page({
+    required IconData icon,
+    required String title,
+    required String body,
+  }) {
+    return PageViewModel(
+      title: title,
+      body: body,
+      image: Center(
+        child: Container(
+          width: 110,
+          height: 110,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 52, color: AppColors.primary),
+        ),
+      ),
+      decoration: const PageDecoration(
+        titleTextStyle: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+        bodyTextStyle: TextStyle(fontSize: 16, height: 1.7),
+        imagePadding: EdgeInsets.only(top: 48),
+        bodyPadding: EdgeInsets.symmetric(horizontal: 20),
+        titlePadding: EdgeInsets.only(top: 24, bottom: 12),
+        pageColor: Colors.transparent,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final last = _index == _pages.length - 1;
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton(
-                onPressed: _finish,
-                child: const Text('تخطي'),
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _page,
-                itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) {
-                  final p = _pages[i];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 96,
-                          height: 96,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(p.$1, size: 48, color: AppColors.primary),
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          p.$2,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          p.$3,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            height: 1.7,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < _pages.length; i++)
-                  Container(
-                    width: i == _index ? 18 : 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      color: i == _index
-                          ? AppColors.primary
-                          : AppColors.primary.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    if (last) {
-                      _finish();
-                    } else {
-                      _page.nextPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOut,
-                      );
-                    }
-                  },
-                  child: Text(last ? 'ابدأ' : 'التالي'),
-                ),
-              ),
-            ),
-          ],
+    return IntroductionScreen(
+      globalBackgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      pages: [
+        _page(
+          icon: Icons.play_circle_fill_rounded,
+          title: 'تعلّم',
+          body:
+              'شاهد حلقات شرح التجويد المصور للشيخ أيمن سويد على يوتيوب بالترتيب.',
+        ),
+        _page(
+          icon: Icons.quiz_rounded,
+          title: 'اختبر',
+          body:
+              'راجع أحكام التجويد برواية حفص عبر أسئلة متنوعة ومراجعة ذكية للأخطاء.',
+        ),
+        _page(
+          icon: Icons.mic_rounded,
+          title: 'سمّع',
+          body:
+              'اقرأ الآية والتصحيح يتابعك كلمة بكلمة — مجاناً وعلى جهازك قدر الإمكان.',
+        ),
+      ],
+      onDone: () => _finish(context),
+      onSkip: () => _finish(context),
+      showSkipButton: true,
+      skip: const Text('تخطي', style: TextStyle(fontWeight: FontWeight.w600)),
+      next: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+      done: const Text('ابدأ', style: TextStyle(fontWeight: FontWeight.w800)),
+      curve: Curves.easeOutCubic,
+      dotsDecorator: DotsDecorator(
+        size: const Size(8, 8),
+        activeSize: const Size(22, 8),
+        activeColor: AppColors.primary,
+        color: AppColors.primary.withOpacity(0.28),
+        activeShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
+      controlsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
     );
   }
 }
