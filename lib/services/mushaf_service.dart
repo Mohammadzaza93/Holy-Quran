@@ -9,13 +9,8 @@ import 'recitation_checker.dart';
 class AyahData {
   const AyahData({required this.number, required this.text, required this.simple});
 
-  /// رقم الآية في السورة
   final int number;
-
-  /// النص بالرسم العثماني (للقراءة)
   final String text;
-
-  /// النص بالرسم الإملائي المشكول (للمقارنة مع التعرف الصوتي وعرض النتيجة)
   final String simple;
 
   Map<String, dynamic> toJson() => {'n': number, 't': text, 's': simple};
@@ -27,8 +22,7 @@ class SurahData {
   final List<AyahData> ayat;
 }
 
-/// تحميل نص السور (رسم عثماني + إملائي) وحفظه محلياً ليعمل التطبيق دون اتصال.
-/// المصدر: api.alquran.cloud (رواية حفص عن عاصم)
+/// تحميل نص السور وحفظه محلياً.
 class MushafService {
   static const _api = 'https://api.alquran.cloud/v1/surah';
   static const _basmala = 'بسم الله الرحمن الرحيم';
@@ -42,7 +36,6 @@ class MushafService {
 
   static Future<File> _file(int surah) async => File('${(await _dir()).path}/$surah.json');
 
-  /// أرقام السور المحفوظة محلياً
   static Future<Set<int>> cachedSurahs() async {
     try {
       final d = await _dir();
@@ -60,7 +53,6 @@ class MushafService {
     }
   }
 
-  /// يعيد السورة من التخزين المحلي، وإلا من الإنترنت (ثم يحفظها). null عند الفشل.
   static Future<SurahData?> getSurah(int number) async {
     final f = await _file(number);
     if (await f.exists()) {
@@ -105,7 +97,6 @@ class MushafService {
     }
   }
 
-  /// المصدر يضيف البسملة إلى بداية الآية الأولى في كل السور عدا الفاتحة والتوبة، فنحذفها.
   static String _stripBasmala(int surah, String text) {
     if (surah == 1 || surah == 9) return text;
     final tokens = text.trim().split(RegExp(r'\s+'));
@@ -129,12 +120,18 @@ class MushafService {
         t = _stripBasmala(number, t);
         s = _stripBasmala(number, s);
       }
-      ayat.add(AyahData(number: (uth[i]['numberInSurah'] as num).toInt(), text: t, simple: s));
+      ayat.add(AyahData(
+        number: (uth[i]['numberInSurah'] as num).toInt(),
+        text: t,
+        simple: s,
+      ));
     }
     return SurahData(number: number, ayat: ayat);
   }
 
-  /// يحمّل كل السور (114) للعمل دون اتصال. يعيد عدد السور الجاهزة.
+  static Future<int> downloadAllSurahs({void Function(int done, int total)? onProgress}) =>
+      downloadAll(onProgress: onProgress);
+
   static Future<int> downloadAll({void Function(int done, int total)? onProgress}) async {
     var ok = 0;
     for (var n = 1; n <= 114; n++) {
