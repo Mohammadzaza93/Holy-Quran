@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
-/// هيكل تحميل بسيط (شبيه Shimmer) بدون حزم إضافية.
-class AppSkeleton extends StatefulWidget {
+/// هيكل تحميل باستخدام مكتبة shimmer.
+class AppSkeleton extends StatelessWidget {
   const AppSkeleton({
     super.key,
     this.height = 16,
@@ -14,53 +15,28 @@ class AppSkeleton extends StatefulWidget {
   final double borderRadius;
 
   @override
-  State<AppSkeleton> createState() => _AppSkeletonState();
-}
-
-class _AppSkeletonState extends State<AppSkeleton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final base = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF2A3530)
-        : const Color(0xFFE8EDE9);
-    final highlight = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF3A4741)
-        : const Color(0xFFF5F7F5);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF2A3530) : const Color(0xFFE4EAE6);
+    final highlight = isDark ? const Color(0xFF3D4A44) : const Color(0xFFF5F8F6);
 
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, _) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            gradient: LinearGradient(
-              begin: Alignment(-1.0 + 2.0 * _c.value, 0),
-              end: Alignment(1.0 + 2.0 * _c.value, 0),
-              colors: [base, highlight, base],
-              stops: const [0.25, 0.5, 0.75],
-            ),
-          ),
-        );
-      },
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      period: const Duration(milliseconds: 1200),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
     );
   }
 }
 
-/// بطاقات هيكل لقائمة السور/التحميل.
+/// قائمة هياكل لقوائم السور/الآيات أثناء التحميل.
 class AppSkeletonList extends StatelessWidget {
   const AppSkeletonList({super.key, this.count = 8});
 
@@ -71,18 +47,21 @@ class AppSkeletonList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: count,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, __) => const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSkeleton(width: 44, height: 44, borderRadius: 12),
+          AppSkeleton(width: 48, height: 48, borderRadius: 12),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppSkeleton(height: 14, width: 140),
+                AppSkeleton(height: 16, width: 160),
+                SizedBox(height: 10),
+                AppSkeleton(height: 12, width: double.infinity),
                 SizedBox(height: 8),
-                AppSkeleton(height: 12, width: 90),
+                AppSkeleton(height: 12, width: 120),
               ],
             ),
           ),
