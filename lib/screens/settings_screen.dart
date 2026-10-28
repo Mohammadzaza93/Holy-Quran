@@ -280,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'يعمل دون إنترنت إن كانت حزمة العربية محمّلة على الجهاز',
                     style: TextStyle(height: 1.4, fontSize: 12.5),
                   ),
-                  activeThumbColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary,
                 ),
                 const SizedBox(height: 8),
                 FilledButton.tonalIcon(
