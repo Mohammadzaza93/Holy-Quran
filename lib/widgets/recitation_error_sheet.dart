@@ -1,13 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+import '../services/ayah_text_service.dart';
+import '../services/connectivity_service.dart';
 import '../services/mushaf_service.dart';
 import '../services/recitation_checker.dart';
 import '../services/storage_service.dart';
 
-/// قائمة خيارات عند خطأ التلاوة — مشابهة لتطبيقات المصحف:
+/// قائمة خيارات عند خطأ التلاوة:
 /// استمع · أعد التسميع · ترجمة · تفسير · إشارة · متشابهات.
 Future<void> showRecitationErrorSheet({
   required BuildContext context,
@@ -58,30 +57,30 @@ Future<void> showRecitationErrorSheet({
             ListTile(
               leading: const Icon(Icons.translate_rounded),
               title: const Text('ترجمة'),
-              subtitle: const Text('معنى الآية (يتطلب إنترنت)'),
+              subtitle: const Text('محلياً بعد التحميل من الإعدادات'),
               onTap: () {
                 Navigator.pop(ctx);
-                _showRemoteText(
+                _showCachedOrFetch(
                   context,
                   title: 'ترجمة الآية',
                   surah: surahNumber,
                   ayah: ayahNumber,
-                  edition: 'en.sahih',
+                  kind: _TextKind.translation,
                 );
               },
             ),
             ListTile(
               leading: const Icon(Icons.menu_book_rounded),
               title: const Text('تفسير'),
-              subtitle: const Text('التفسير الميسّر (يتطلب إنترنت)'),
+              subtitle: const Text('الميسّر — محلياً بعد التحميل'),
               onTap: () {
                 Navigator.pop(ctx);
-                _showRemoteText(
+                _showCachedOrFetch(
                   context,
                   title: 'التفسير الميسّر',
                   surah: surahNumber,
                   ayah: ayahNumber,
-                  edition: 'ar.muyassar',
+                  kind: _TextKind.tafsir,
                 );
               },
             ),
@@ -124,43 +123,47 @@ Future<void> showRecitationErrorSheet({
   );
 }
 
-Future<void> _showRemoteText(
+enum _TextKind { translation, tafsir }
+
+Future<void> _showCachedOrFetch(
   BuildContext context, {
   required String title,
   required int surah,
   required int ayah,
-  required String edition,
+  required _TextKind kind,
 }) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const Center(child: CircularProgressIndicator()),
   );
-  String? text;
-  try {
-    final uri = Uri.parse('https://api.alquran.cloud/v1/ayah/$surah:$ayah/$edition');
-    final res = await http.get(uri).timeout(const Duration(seconds: 12));
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final ayahData = data['data'];
-      if (ayahData is Map && ayahData['text'] is String) {
-        text = ayahData['text'] as String;
-      }
-    }
-  } catch (_) {
-    text = null;
+
+  // 1) محلي فقط أولاً
+  String? text = kind == _TextKind.tafsir
+      ? await AyahTextService.getTafsir(surah, ayah, allowNetwork: false)
+      : await AyahTextService.getTranslation(surah, ayah, allowNetwork: false);
+
+  // 2) إن لم يوجد والشبكة متاحة: حمّل السورة كاملة واحفظها
+  if (text == null && await ConnectivityService.isOnline()) {
+    text = kind == _TextKind.tafsir
+        ? await AyahTextService.getTafsir(surah, ayah, allowNetwork: true)
+        : await AyahTextService.getTranslation(surah, ayah, allowNetwork: true);
   }
+
   if (!context.mounted) return;
   Navigator.of(context, rootNavigator: true).pop();
+
+  final body = text ??
+      'النص غير محمّل على الجهاز.\n\n'
+          'من الإعدادات ← «حفظ التفسير والترجمة للعمل دون اتصال» '
+          'أو اتصل بالإنترنت مرة واحدة لجلب هذه السورة تلقائياً.';
+
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(title),
       content: SingleChildScrollView(
-        child: Text(
-          text ?? 'تعذّر الجلب. تحقق من الاتصال بالإنترنت.',
-          style: const TextStyle(height: 1.7, fontSize: 15),
-        ),
+        child: Text(body, style: const TextStyle(height: 1.7, fontSize: 15)),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إغلاق')),
