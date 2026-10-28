@@ -1,3 +1,4 @@
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -35,12 +36,13 @@ class TajweedApp extends StatelessWidget {
           darkTheme: AppTheme.dark(),
           themeMode: store.themeMode,
           builder: (context, child) {
-            // حدّ معقول لتكبير خط النظام حتى لا تتكسر الواجهة
             final mq = MediaQuery.of(context);
             final scale = mq.textScaler.clamp(
               minScaleFactor: 0.9,
               maxScaleFactor: 1.25,
             );
+            // BotToast + إغلاق لوحة المفاتيح باللمس
+            child = BotToastInit()(context, child);
             return MediaQuery(
               data: mq.copyWith(textScaler: scale),
               child: GestureDetector(
@@ -50,6 +52,7 @@ class TajweedApp extends StatelessWidget {
               ),
             );
           },
+          navigatorObservers: [BotToastNavigatorObserver()],
           home: store.onboardingDone
               ? const HomeScreen()
               : const OnboardingScreen(),
