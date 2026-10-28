@@ -34,6 +34,22 @@ class TajweedApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: store.themeMode,
+          builder: (context, child) {
+            // حدّ معقول لتكبير خط النظام حتى لا تتكسر الواجهة
+            final mq = MediaQuery.of(context);
+            final scale = mq.textScaler.clamp(
+              minScaleFactor: 0.9,
+              maxScaleFactor: 1.25,
+            );
+            return MediaQuery(
+              data: mq.copyWith(textScaler: scale),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                child: child ?? const SizedBox.shrink(),
+              ),
+            );
+          },
           home: store.onboardingDone
               ? const HomeScreen()
               : const OnboardingScreen(),
