@@ -1,5 +1,5 @@
 name: tajweed_quiz
-description: تطبيق اختبار التجويد ومخارج الحروف برواية حفص بن عاصم - يعمل دون اتصال ومعه ميزات عند الاتصال.
+description: إتقان — اختبار التجويد وتسميع القرآن برواية حفص، مع تصحيح فوري وشرح مصور.
 publish_to: "none"
 version: 1.0.0+1
 
@@ -22,11 +22,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#0B6E4F"
+  adaptive_icon_foreground: assets/icon/app_icon.png
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/
   fonts:
-    # خط Amiri Quran (رخصة SIL OFL 1.1 - انظر assets/fonts/OFL.txt) لعرض الآيات
     - family: AmiriQuran
       fonts:
         - asset: assets/fonts/AmiriQuran-Regular.ttf
