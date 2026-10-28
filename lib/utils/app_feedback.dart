@@ -1,19 +1,19 @@
-import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 
-/// رسائل منبثقة سريعة (BotToast).
-void appToast(String message, {bool success = false}) {
-  BotToast.showText(
-    text: message,
-    duration: const Duration(seconds: 2),
-    contentColor: success ? const Color(0xFF0B6E4F) : const Color(0xFF2C2C2C),
-    textStyle: const TextStyle(color: Colors.white, fontSize: 14),
-    borderRadius: BorderRadius.circular(10),
-    align: const Alignment(0, 0.72),
+/// رسالة سريعة عبر SnackBar (بدون حزم خارجية).
+void appToast(BuildContext context, String message, {bool success = false}) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor:
+          success ? const Color(0xFF0B6E4F) : null,
+      duration: const Duration(seconds: 2),
+    ),
   );
 }
 
-/// حوار تأكيد بـ Material (بدون awesome_dialog).
 Future<bool> appConfirm(
   BuildContext context, {
   required String title,
@@ -41,7 +41,6 @@ Future<bool> appConfirm(
   return result ?? false;
 }
 
-/// حوار نجاح.
 Future<void> appSuccess(
   BuildContext context, {
   required String title,
@@ -50,9 +49,12 @@ Future<void> appSuccess(
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF0B6E4F), size: 40),
+      icon: const Icon(Icons.check_circle_rounded,
+          color: Color(0xFF0B6E4F), size: 40),
       title: Text(title),
-      content: body == null ? null : Text(body, style: const TextStyle(height: 1.6)),
+      content: body == null
+          ? null
+          : Text(body, style: const TextStyle(height: 1.6)),
       actions: [
         FilledButton(
           onPressed: () => Navigator.pop(ctx),
