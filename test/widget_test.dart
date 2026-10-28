@@ -21,14 +21,15 @@ void main() {
   });
 
   testWidgets('يعرض التطبيق الشاشة الرئيسية', (WidgetTester tester) async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      'onboarding_done': true,
+    });
     await StorageService.init();
 
     await tester.pumpWidget(const TajweedApp());
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
 
-    // العناوين بعد إعادة تصميم الواجهة
     expect(find.text('تجويد حفص'), findsWidgets);
     expect(find.text('شامل'), findsOneWidget);
     expect(find.text('شرح التجويد المصور'), findsOneWidget);

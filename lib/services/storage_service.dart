@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/question.dart';
 import 'spaced_repetition.dart';
 
-/// تخزين محلي مع إشعار المستمعين عند تغيّر البيانات (لتجنب setState الجذري بلا داعٍ).
+/// تخزين محلي مع إشعار المستمعين عند تغيّر البيانات.
 class StorageService extends ChangeNotifier {
   StorageService._(this._p);
 
@@ -47,6 +48,7 @@ class StorageService extends ChangeNotifier {
     }
     await _p.setStringList('wrong_ids', wrong.toList());
     await _srsUpdate(q.id, isCorrect);
+    await _bumpDailyQuiz();
     _notify();
   }
 
@@ -99,8 +101,9 @@ class StorageService extends ChangeNotifier {
     _notify();
   }
 
-  // ───────── تقدم حلقات يوتيوب ─────────
+  Future<void> clearQuizProgress() => resetProgress();
 
+  // ───────── تقدم حلقات يوتيوب ─────────
   static const _lessonReadKey = 'lesson_read_ids';
 
   Set<String> get readLessonIds =>
@@ -130,6 +133,8 @@ class StorageService extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> clearLessonProgress() => resetLessonProgress();
+
   // ───────── الإعدادات ─────────
   static const defaultReciter = 'Alafasy_128kbps';
 
@@ -148,8 +153,75 @@ class StorageService extends ChangeNotifier {
     _notify();
   }
 
-  // ───────── القراءة والتصحيح الصوتي ─────────
+  String get themeModeName => _p.getString('theme_mode') ?? 'system';
 
+  ThemeMode get themeMode {
+    switch (themeModeName) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> setThemeModeName(String name) async {
+    await _p.setString('theme_mode', name);
+    _notify();
+  }
+
+  bool get onboardingDone => _p.getBool('onboarding_done') ?? false;
+
+  Future<void> setOnboardingDone(bool v) async {
+    await _p.setBool('onboarding_done', v);
+    _notify();
+  }
+
+  // ───────── هدف يومي ─────────
+  static const dailyQuizGoal = 10;
+
+  String get _todayKey {
+    final n = DateTime.now();
+    return '${n.year}-${n.month}-${n.day}';
+  }
+
+  int get dailyQuizCount {
+    if (_p.getString('daily_quiz_day') != _todayKey) return 0;
+    return _p.getInt('daily_quiz_count') ?? 0;
+  }
+
+  Future<void> _bumpDailyQuiz() async {
+    final key = _todayKey;
+    if (_p.getString('daily_quiz_day') != key) {
+      await _p.setString('daily_quiz_day', key);
+      await _p.setInt('daily_quiz_count', 1);
+    } else {
+      await _p.setInt('daily_quiz_count', dailyQuizCount + 1);
+    }
+  }
+
+  // ───────── سجل أخطاء محلي ─────────
+  static const _errLogKey = 'local_error_log';
+
+  List<String> get localErrorLog => _p.getStringList(_errLogKey) ?? const [];
+
+  Future<void> logLocalError(String message) async {
+    final list = localErrorLog.toList();
+    final stamp = DateTime.now().toIso8601String();
+    list.insert(0, '[$stamp] $message');
+    while (list.length > 30) {
+      list.removeLast();
+    }
+    await _p.setStringList(_errLogKey, list);
+  }
+
+  Future<void> clearLocalErrorLog() async {
+    await _p.remove(_errLogKey);
+    _notify();
+  }
+
+  // ───────── القراءة والتصحيح الصوتي ─────────
   double? ayahBestScore(int surah, int ayah) => _p.getDouble('read_$surah:$ayah');
 
   Future<void> saveAyahScore(int surah, int ayah, double score) async {
@@ -191,7 +263,32 @@ class StorageService extends ChangeNotifier {
     _notify();
   }
 
-  // ───────── حزمة الأسئلة المحمّلة من الإنترنت ─────────
+  // ───────── إشارات مرجعية ─────────
+  static const _bookmarkKey = 'ayah_bookmarks';
+
+  Set<String> get ayahBookmarks =>
+      (_p.getStringList(_bookmarkKey) ?? <String>[]).toSet();
+
+  bool isAyahBookmarked(int surah, int ayah) =>
+      ayahBookmarks.contains('$surah:$ayah');
+
+  Future<void> addAyahBookmark(int surah, int ayah) async {
+    final ids = ayahBookmarks;
+    final k = '$surah:$ayah';
+    if (ids.contains(k)) return;
+    ids.add(k);
+    await _p.setStringList(_bookmarkKey, ids.toList());
+    _notify();
+  }
+
+  Future<void> removeAyahBookmark(int surah, int ayah) async {
+    final ids = ayahBookmarks;
+    if (!ids.remove('$surah:$ayah')) return;
+    await _p.setStringList(_bookmarkKey, ids.toList());
+    _notify();
+  }
+
+  // ───────── حزمة الأسئلة المحمّلة ─────────
   List<Question>? _remoteCache;
 
   List<Question> remoteQuestions() {
@@ -207,7 +304,8 @@ class StorageService extends ChangeNotifier {
         _remoteCache = const [];
         return _remoteCache!;
       }
-      _remoteCache = data.map(Question.tryParse).whereType<Question>().toList(growable: false);
+      _remoteCache =
+          data.map(Question.tryParse).whereType<Question>().toList(growable: false);
       return _remoteCache!;
     } catch (_) {
       _remoteCache = const [];

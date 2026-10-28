@@ -13,8 +13,9 @@ import '../services/speech_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/quran_font.dart';
+import '../widgets/recitation_error_sheet.dart';
 
-/// شاشة التسميع مع تتبع حي كلمة بكلمة (مؤشر + تلوين فوري).
+/// شاشة التسميع مع تتبع حي كلمة بكلمة + قائمة مساعدة عند الخطأ.
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key, required this.surah, required this.startIndex});
 
@@ -26,40 +27,38 @@ class PracticeScreen extends StatefulWidget {
 }
 
 class _PracticeScreenState extends State<PracticeScreen> {
-  final SpeechService _speech = SpeechService.instance;
-  final AudioPlayer _player = AudioPlayer();
-  StreamSubscription<PlayerState>? _playerSub;
-
   late int _index;
-  bool _hideText = false;
+  final _speech = SpeechService.instance;
+  final _player = AudioPlayer();
+  StreamSubscription<void>? _playerSub;
+
   bool _listening = false;
   bool _finished = true;
   bool _playing = false;
   bool _loadingAudio = false;
-
+  bool _hideText = false;
   bool _masteryMode = true;
   static const double _masteryThreshold = 0.8;
 
-  String _lastWords = '';
   RecitationResult? _result;
   LiveTrackResult? _liveTrack;
   String? _message;
+  String _lastWords = '';
 
   AyahData get _ayah => widget.surah.ayat[_index];
-  int get _count => widget.surah.ayat.length;
-
-  /// نص العرض المفضّل (مشكول إن توفر)
   String get _displayAyahText =>
       _ayah.text.trim().isNotEmpty ? _ayah.text : _ayah.simple;
 
   @override
   void initState() {
     super.initState();
-    _index = widget.startIndex;
-    _playerSub = _player.onPlayerStateChanged.listen((s) {
-      if (mounted) setState(() => _playing = s == PlayerState.playing);
-    });
+    _index = widget.startIndex.clamp(0, widget.surah.ayat.length - 1);
     StorageService.instance.saveLastPosition(widget.surah.number, _ayah.number);
+    _playerSub = _player.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _playing = false);
+    });
+    _speech.onStatus = null;
+    _speech.onError = null;
   }
 
   @override
@@ -70,6 +69,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _playerSub?.cancel();
     _player.dispose();
     super.dispose();
+  }
+
+  Future<void> _openErrorSheet({WordResult? focusWord}) {
+    return showRecitationErrorSheet(
+      context: context,
+      surahNumber: widget.surah.number,
+      ayahNumber: _ayah.number,
+      surahAyat: widget.surah.ayat,
+      focusWord: focusWord,
+      onListen: () {
+        if (!_playing) _toggleReference();
+      },
+      onRetryMic: () {
+        if (!_listening) _toggleMic();
+      },
+    );
   }
 
   Future<void> _toggleMic() async {
@@ -141,7 +156,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() {
       _listening = true;
       _finished = false;
-      // مؤشر على أول كلمة فور بدء الاستماع
       _liveTrack = RecitationChecker.trackLive(_displayAyahText, '');
     });
 
@@ -186,6 +200,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Future<void> _toggleReference() async {
     if (_playing) {
       await _player.stop();
+      setState(() => _playing = false);
       return;
     }
     if (_listening) await _speech.cancel();
@@ -205,9 +220,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
         });
         return;
       }
-      await _player.play(await QuranService.audioSource(s, a));
+      final src = await QuranService.audioSource(s, a);
+      await _player.play(src);
       if (!mounted) return;
-      setState(() => _loadingAudio = false);
+      setState(() {
+        _loadingAudio = false;
+        _playing = true;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -217,40 +236,29 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
   }
 
-  bool get _canAdvanceFreely {
+  bool get _canGoNext {
     if (!_masteryMode) return true;
+    if (_result != null && _result!.score >= _masteryThreshold) return true;
     final best =
         StorageService.instance.ayahBestScore(widget.surah.number, _ayah.number);
-    if (best != null && best >= _masteryThreshold) return true;
-    if (_result != null && _result!.score >= _masteryThreshold) return true;
-    return false;
+    return best != null && best >= _masteryThreshold;
   }
 
-  Future<void> _go(int delta) async {
+  void _go(int delta) {
     final next = _index + delta;
-    if (next < 0 || next >= _count) return;
-
-    if (delta > 0 && _masteryMode && !_canAdvanceFreely) {
-      final ok = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('لم تُتقن الآية بعد'),
+    if (next < 0 || next >= widget.surah.ayat.length) return;
+    if (delta > 0 && !_canGoNext) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
-            'وضع الإتقان مفعّل. يُفضَّل إعادة القراءة حتى تصل إلى ${(_masteryThreshold * 100).round()}% على الأقل.\n\nهل تريد الانتقال رغم ذلك؟',
-            style: const TextStyle(height: 1.6),
+            'وضع الإتقان: صل إلى ${(_masteryThreshold * 100).round()}% على هذه الآية قبل الانتقال',
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('البقاء')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('انتقال')),
-          ],
         ),
       );
-      if (ok != true || !mounted) return;
+      return;
     }
-
-    await _player.stop();
-    await _speech.cancel();
+    _speech.cancel();
+    _player.stop();
     setState(() {
       _index = next;
       _result = null;
@@ -259,6 +267,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _lastWords = '';
       _listening = false;
       _finished = true;
+      _playing = false;
     });
     StorageService.instance.saveLastPosition(widget.surah.number, _ayah.number);
   }
@@ -271,98 +280,73 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'سورة ${surahName(widget.surah.number)} · آية ${arabicDigits(_ayah.number)}',
+          'سورة ${surahName(widget.surah.number)} · آية ${_ayah.number}',
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            LinearProgressIndicator(
-              value: (_index + 1) / _count,
-              minHeight: 4,
-              backgroundColor: const Color(0xFFE2E8E4),
-            ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _ayahCard(textHidden),
-                  if (_listening && _liveTrack != null) ...[
-                    const SizedBox(height: 10),
-                    _liveProgressBar(_liveTrack!),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ayahCard(textHidden),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('وضع التسميع من الحفظ'),
+                      subtitle: const Text('يُخفى نص الآية حتى تبدأ القراءة أو تنتهي'),
+                      value: _hideText,
+                      onChanged: (v) => setState(() => _hideText = v),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('وضع الإتقان'),
+                      subtitle: Text(
+                        'يمنع الانتقال للسهل إن كانت النتيجة أقل من ${(_masteryThreshold * 100).round()}%',
+                      ),
+                      value: _masteryMode,
+                      onChanged: (v) => setState(() => _masteryMode = v),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _loadingAudio ? null : _toggleReference,
+                      icon: Icon(_playing ? Icons.stop : Icons.volume_up),
+                      label: Text(_playing ? 'إيقاف' : 'استمع للقارئ أولاً'),
+                    ),
+                    const SizedBox(height: 20),
+                    _micArea(scheme),
+                    if (_message != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: Text(
+                          _message!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red.shade800, height: 1.6),
+                        ),
+                      ),
+                    if (_result != null) _resultArea(_result!),
                   ],
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _hideText,
-                    onChanged: (v) => setState(() => _hideText = v),
-                    title: const Text('وضع التسميع من الحفظ'),
-                    subtitle: const Text('يُخفى نص الآية حتى تبدأ القراءة أو تنتهي'),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: _masteryMode,
-                    onChanged: (v) => setState(() => _masteryMode = v),
-                    title: const Text('وضع الإتقان'),
-                    subtitle: Text(
-                      'يمنع الانتقال السهل إن كانت النتيجة أقل من ${(_masteryThreshold * 100).round()}%',
-                    ),
-                  ),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _loadingAudio ? null : _toggleReference,
-                        icon: _loadingAudio
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Icon(_playing ? Icons.stop : Icons.volume_up),
-                        label: Text(_playing ? 'إيقاف' : 'استمع للقارئ أولاً'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  _micArea(scheme),
-                  if (_message != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        _message!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: scheme.error, height: 1.7),
-                      ),
-                    ),
-                  if (_result != null) _resultArea(_result!),
-                ],
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: OutlinedButton(
                       onPressed: _index > 0 ? () => _go(-1) : null,
-                      icon: const Icon(Icons.chevron_right),
-                      label: const Text('السابقة'),
+                      child: const Text('السابقة'),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _index < _count - 1 ? () => _go(1) : null,
-                      icon: Icon(
-                        _masteryMode && !_canAdvanceFreely
-                            ? Icons.lock_open
-                            : Icons.chevron_left,
-                      ),
-                      label: Text(
-                        _masteryMode && !_canAdvanceFreely
-                            ? 'التالية (تجاوز)'
-                            : 'التالية',
-                      ),
+                    child: FilledButton(
+                      onPressed: _index < widget.surah.ayat.length - 1 ? () => _go(1) : null,
+                      child: Text(_canGoNext ? 'التالية' : 'التالية (تجاوز)'),
                     ),
                   ),
                 ],
@@ -374,60 +358,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
   }
 
-  Widget _liveProgressBar(LiveTrackResult t) {
-    final total = t.words.length;
-    final progress = total == 0 ? 0.0 : t.cursor / total;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.graphic_eq_rounded, size: 18, color: AppColors.primary),
-            const SizedBox(width: 6),
-            Text(
-              'الكلمة ${t.cursor.clamp(0, total)} من $total',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            const Spacer(),
-            Text(
-              '${(t.score * 100).round()}%',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: progress.clamp(0.0, 1.0),
-            minHeight: 6,
-            backgroundColor: const Color(0xFFE2E8E4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _ayahCard(bool hidden) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _listening ? AppColors.primary.withValues(alpha: 0.45) : const Color(0xFFD9C79A),
-          width: _listening ? 1.6 : 1,
-        ),
-      ),
-      child: hidden
-          ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Column(
+  Widget _ayahCard(bool textHidden) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: textHidden
+            ? const Column(
                 children: [
                   Icon(Icons.visibility_off, color: Colors.grey),
                   SizedBox(height: 8),
@@ -437,13 +373,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     style: TextStyle(height: 1.7),
                   ),
                 ],
-              ),
-            )
-          : _buildAyahWords(),
+              )
+            : _buildAyahWords(),
+      ),
     );
   }
 
-  /// يعرض الآية مع تلوين حي عند الاستماع أو بعد النتيجة النهائية.
   Widget _buildAyahWords() {
     final List<WordResult>? liveWords =
         _listening && _liveTrack != null ? _liveTrack!.words : null;
@@ -494,17 +429,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
         border = Border.all(color: const Color(0xFF1E5F8A), width: 2);
         shadow = [
           BoxShadow(
-            color: const Color(0xFF1E5F8A).withValues(alpha: 0.25),
+            color: const Color(0xFF1E5F8A).withOpacity(0.25),
             blurRadius: 8,
             spreadRadius: 1,
           ),
         ];
       case WordStatus.pending:
         bg = Colors.transparent;
-        fg = const Color(0xFF0B3D2E).withValues(alpha: 0.55);
+        fg = const Color(0xFF0B3D2E).withOpacity(0.55);
     }
 
-    return AnimatedContainer(
+    final tappable = !live &&
+        (w.status == WordStatus.wrong ||
+            w.status == WordStatus.missing ||
+            w.status == WordStatus.near);
+
+    final chip = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -526,6 +466,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
           decorationColor: Colors.red.shade400,
         ),
       ),
+    );
+
+    if (!tappable) return chip;
+    return GestureDetector(
+      onTap: () => _openErrorSheet(focusWord: w),
+      child: chip,
     );
   }
 
@@ -626,11 +572,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     _legend(Colors.grey.shade300, 'زائدة ${r.extras.length}'),
                 ],
               ),
-              ..._details(r),
-              ..._lahnSection(r),
+              if (!r.isPerfect) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _openErrorSheet(),
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('خيارات المساعدة عند الخطأ'),
+                ),
+              ],
               const Divider(height: 24),
               const Text(
-                'التتبع الحي يعتمد Edit Distance على الكلمات بعد توحيد الرسم. أحكام التجويد الدقيقة تحتاج مقرئاً.',
+                'اضغط كلمة حمراء/صفراء لفتح: استمع · ترجمة · تفسير · إشارة · متشابهات.',
                 style: TextStyle(fontSize: 12.5, height: 1.7, color: Colors.black54),
               ),
             ],
@@ -650,103 +602,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
           decoration: BoxDecoration(
             color: c,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: border ?? Colors.black26),
+            border: border != null ? Border.all(color: border) : null,
           ),
         ),
-        const SizedBox(width: 5),
-        Text(label, style: const TextStyle(fontSize: 13)),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12.5)),
       ],
     );
-  }
-
-  List<Widget> _details(RecitationResult r) {
-    final lines = <String>[];
-    for (final w in r.words) {
-      if (w.status == WordStatus.wrong) {
-        lines.add('نُطقت «${w.heard}» بدل «${w.display}»');
-      } else if (w.status == WordStatus.missing) {
-        lines.add('تركتَ كلمة «${w.display}»');
-      } else if (w.status == WordStatus.near) {
-        lines.add('«${w.display}» قريبة: سُمعت «${w.heard}»، أعد نطقها بوضوح');
-      }
-    }
-    if (r.extras.isNotEmpty) {
-      lines.add('كلمات زائدة: ${r.extras.join('، ')}');
-    }
-    if (lines.isEmpty) return const [];
-    return [
-      const SizedBox(height: 12),
-      const Text('ملاحظات', style: TextStyle(fontWeight: FontWeight.bold)),
-      const SizedBox(height: 4),
-      for (final l in lines)
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text('• $l', style: const TextStyle(height: 1.6)),
-        ),
-    ];
-  }
-
-  /// قسم «اللحن الجلي»: ما يُشتبه فيه في الحروف والكلمات، مع تنبيه على حدّ الرصد في الحركات.
-  List<Widget> _lahnSection(RecitationResult r) {
-    final letters = r.lahn.where((f) => f.category == LahnCategory.letters).toList();
-    final words = r.lahn.where((f) => f.category == LahnCategory.words).toList();
-
-    Widget group(String title, List<LahnFinding> list) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            for (final f in list)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, right: 6),
-                child: Text(
-                  '• ${f.title}: ${f.description}${f.hint == null ? '' : '\n   ${f.hint}'}',
-                  style: const TextStyle(height: 1.6),
-                ),
-              ),
-          ],
-        );
-
-    return [
-      const SizedBox(height: 14),
-      Row(
-        children: [
-          const Expanded(
-            child: Text('اللحن الجلي (اشتباه)', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          IconButton(
-            tooltip: 'ما هو اللحن الجلي؟',
-            icon: const Icon(Icons.info_outline),
-            onPressed: _showLahnInfo,
-          ),
-        ],
-      ),
-      if (r.lahn.isEmpty)
-        const Text(
-          'لم يُرصد لحن جلي في الحروف أو الكلمات.',
-          style: TextStyle(height: 1.6),
-        )
-      else ...[
-        if (letters.isNotEmpty) group('في الحروف', letters),
-        if (words.isNotEmpty) group('في الكلمات', words),
-        const Padding(
-          padding: EdgeInsets.only(top: 6),
-          child: Text(
-            'هذا اشتباه من التعرف الصوتي وقد يكون خطأ في السماع؛ استمع للقارئ وأعد الآية للتأكد.',
-            style: TextStyle(fontSize: 12.5, height: 1.6, color: Colors.black54),
-          ),
-        ),
-      ],
-      const Padding(
-        padding: EdgeInsets.only(top: 6),
-        child: Text(
-          'اللحن في الحركات لا يمكن رصده آلياً لأن التعرف الصوتي لا يعيد التشكيل.',
-          style: TextStyle(fontSize: 12.5, height: 1.6, color: Colors.black54),
-        ),
-      ),
-    ];
   }
 
   void _showLahnInfo() {

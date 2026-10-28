@@ -109,14 +109,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SpiverAppBarFix(
-              onSettings: _openSettings,
-            ),
-            SpiverBody(
-              online: _online,
-              onStart: _start,
-              onChooseCount: _chooseCount,
-            ),
+            SpiverAppBarFix(onSettings: _openSettings),
+            SpiverBody(online: _online, onStart: _start, onChooseCount: _chooseCount),
           ],
         ),
       ),
@@ -124,9 +118,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-/// شريط علوي مع زر إعدادات (منفصل لأن const لا يقبل callbacks).
 class SpiverAppBarFix extends StatelessWidget {
   const SpiverAppBarFix({super.key, required this.onSettings});
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    return SLiverAppBarSafe(onSettings: onSettings);
+  }
+}
+
+class SLiverAppBarSafe extends StatelessWidget {
+  const SLiverAppBarSafe({super.key, required this.onSettings});
   final VoidCallback onSettings;
 
   @override
@@ -180,11 +183,58 @@ class SpiverBody extends StatelessWidget {
               final totalAns = store.totalAnswered;
               final overall =
                   totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
+              final dailyDone = store.dailyQuizCount;
+              final dailyGoal = StorageService.dailyQuizGoal;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _LevelCard(overall: overall, totalAns: totalAns),
+                  const SizedBox(height: 12),
+                  Material(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      onTap: () => onStart(all, 'اختبار سريع', 10),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0x0F000000)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.bolt_rounded, color: AppColors.gold),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'هدف اليوم · اختبار سريع',
+                                    style: TextStyle(fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                Text(
+                                  '$dailyDone/$dailyGoal',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (dailyDone / dailyGoal).clamp(0.0, 1.0),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   const _SectionLabel('التعلّم والتلاوة'),
                   const SizedBox(height: 10),
@@ -328,10 +378,7 @@ class _StatusChip extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Icon(
@@ -367,13 +414,6 @@ class _LevelCard extends StatelessWidget {
           end: Alignment.bottomLeft,
           colors: [Color(0xFF0B6E4F), Color(0xFF147A58)],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -381,10 +421,8 @@ class _LevelCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'مستواك العام',
-                  style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
-                ),
+                Text('مستواك العام',
+                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
                 const SizedBox(height: 6),
                 Text(
                   totalAns == 0 ? 'ابدأ أول اختبار' : '$overall%',
@@ -397,10 +435,8 @@ class _LevelCard extends StatelessWidget {
                 ),
                 if (totalAns > 0) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    'أجبت عن $totalAns سؤالاً',
-                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
-                  ),
+                  Text('أجبت عن $totalAns سؤالاً',
+                      style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
                 ],
               ],
             ),
@@ -428,11 +464,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-        color: AppColors.ink,
-      ),
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.ink),
     );
   }
 }
@@ -457,7 +489,7 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -483,10 +515,8 @@ class _FeatureCard extends StatelessWidget {
                   children: [
                     Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
                     const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: AppColors.muted, height: 1.35, fontSize: 12.5),
-                    ),
+                    Text(subtitle,
+                        style: const TextStyle(color: AppColors.muted, height: 1.35, fontSize: 12.5)),
                   ],
                 ),
               ),
@@ -521,7 +551,7 @@ class _QuickAction extends StatelessWidget {
     final active = enabled && onTap != null;
     final bg = filled && active
         ? AppColors.primary
-        : (active ? Colors.white : const Color(0xFFF0F0EC));
+        : (active ? Theme.of(context).cardColor : const Color(0xFFF0F0EC));
     final fg = filled && active
         ? Colors.white
         : (active ? AppColors.ink : AppColors.muted);
@@ -571,7 +601,7 @@ class _CategoryCard extends StatelessWidget {
     final acc = store.accuracy(category);
 
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -598,7 +628,8 @@ class _CategoryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(category.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                    Text(category.title,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                     const SizedBox(height: 4),
                     Text(
                       answered == 0
