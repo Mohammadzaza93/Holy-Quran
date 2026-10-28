@@ -195,204 +195,168 @@ class SpiverBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SLiverPaddingBody(online: online, onStart: onStart, onChooseCount: onChooseCount);
-  }
-}
-
-class SLiverPaddingBody extends StatelessWidget {
-  const SLiverPaddingBody({
-    super.key,
-    required this.online,
-    required this.onStart,
-    required this.onChooseCount,
-  });
-
-  final bool? online;
-  final Future<void> Function(List<Question> pool, String title, int count) onStart;
-  final void Function(String title, List<Question> pool) onChooseCount;
-
-  @override
-  Widget build(BuildContext context) {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-      sliver: SLiverListBody(online: online, onStart: onStart, onChooseCount: onChooseCount),
-    );
-  }
-}
+      sliver: SliverList(
+        delegate: SliverChildListDelegate([
+          _StatusChip(online: online),
+          const SizedBox(height: 14),
+          ListenableBuilder(
+            listenable: StorageService.instance,
+            builder: (context, _) {
+              final store = StorageService.instance;
+              final all = QuestionRepository.all();
+              final wrong = QuestionRepository.wrongOnes();
+              final due = QuestionRepository.dueOnes();
+              final totalAns = store.totalAnswered;
+              final overall =
+                  totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
+              final dailyDone = store.dailyQuizCount;
+              final dailyGoal = StorageService.dailyQuizGoal;
 
-class SLiverListBody extends StatelessWidget {
-  const SLiverListBody({
-    super.key,
-    required this.online,
-    required this.onStart,
-    required this.onChooseCount,
-  });
-
-  final bool? online;
-  final Future<void> Function(List<Question> pool, String title, int count) onStart;
-  final void Function(String title, List<Question> pool) onChooseCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverList(
-      delegate: SliverChildListDelegate([
-        _StatusChip(online: online),
-        const SizedBox(height: 14),
-        ListenableBuilder(
-          listenable: StorageService.instance,
-          builder: (context, _) {
-            final store = StorageService.instance;
-            final all = QuestionRepository.all();
-            final wrong = QuestionRepository.wrongOnes();
-            final due = QuestionRepository.dueOnes();
-            final totalAns = store.totalAnswered;
-            final overall =
-                totalAns == 0 ? 0 : (store.totalCorrect * 100 / totalAns).round();
-            final dailyDone = store.dailyQuizCount;
-            final dailyGoal = StorageService.dailyQuizGoal;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _LevelCard(overall: overall, totalAns: totalAns),
-                const SizedBox(height: 12),
-                Material(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    onTap: () => onStart(all, 'اختبار سريع', 10),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _LevelCard(overall: overall, totalAns: totalAns),
+                  const SizedBox(height: 12),
+                  Material(
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0x0F000000)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.bolt_rounded, color: AppColors.gold),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  'هدف اليوم · اختبار سريع',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
+                    child: InkWell(
+                      onTap: () => onStart(all, 'اختبار سريع', 10),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0x0F000000)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.bolt_rounded, color: AppColors.gold),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'هدف اليوم · اختبار سريع',
+                                    style: TextStyle(fontWeight: FontWeight.w700),
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '$dailyDone/$dailyGoal',
-                                style: const TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: (dailyDone / dailyGoal).clamp(0.0, 1.0),
-                              minHeight: 6,
+                                Text(
+                                  '$dailyDone/$dailyGoal',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (dailyDone / dailyGoal).clamp(0.0, 1.0),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                const _SectionLabel('التعلّم والتلاوة'),
-                const SizedBox(height: 10),
-                _FeatureCard(
-                  icon: Icons.play_circle_fill_rounded,
-                  iconBg: const Color(0xFFE8F5EF),
-                  iconColor: AppColors.primary,
-                  title: 'شرح التجويد المصور',
-                  subtitle: '45 حلقة للشيخ أيمن سويد على يوتيوب',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const LessonsListScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _FeatureCard(
-                  icon: Icons.mic_rounded,
-                  iconBg: const Color(0xFFEAF2FB),
-                  iconColor: const Color(0xFF1E5F8A),
-                  title: 'اقرأ وصحّح تلاوتك',
-                  subtitle: 'تسميع بالتعرف الصوتي مع تنبيه فوري للأخطاء',
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SurahListScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 22),
-                const _SectionLabel('الاختبارات'),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.shuffle_rounded,
-                        label: 'شامل',
-                        hint: '20 سؤالاً',
-                        filled: true,
-                        onTap: () => onStart(all, 'اختبار شامل', 20),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.event_repeat_rounded,
-                        label: 'اليوم',
-                        hint: due.isEmpty ? 'لا شيء' : '${due.length}',
-                        enabled: due.isNotEmpty,
-                        onTap: due.isEmpty
-                            ? null
-                            : () => onStart(due, 'مراجعة اليوم', due.length),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _QuickAction(
-                        icon: Icons.history_rounded,
-                        label: 'أخطائي',
-                        hint: wrong.isEmpty ? '0' : '${wrong.length}',
-                        enabled: wrong.isNotEmpty,
-                        onTap: wrong.isEmpty
-                            ? null
-                            : () => onStart(wrong, 'مراجعة أخطائي', wrong.length),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                const _SectionLabel('أقسام الأسئلة'),
-                const SizedBox(height: 10),
-                for (final c in QuizCategory.values) ...[
-                  _CategoryCard(
-                    category: c,
-                    questionCount: QuestionRepository.countInCategory(c),
-                    onTap: () => onChooseCount(c.title, QuestionRepository.byCategory(c)),
+                  const SizedBox(height: 20),
+                  const _SectionLabel('التعلّم والتلاوة'),
+                  const SizedBox(height: 10),
+                  _FeatureCard(
+                    icon: Icons.play_circle_fill_rounded,
+                    iconBg: const Color(0xFFE8F5EF),
+                    iconColor: AppColors.primary,
+                    title: 'شرح التجويد المصور',
+                    subtitle: '45 حلقة للشيخ أيمن سويد على يوتيوب',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LessonsListScreen()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
+                  _FeatureCard(
+                    icon: Icons.mic_rounded,
+                    iconBg: const Color(0xFFEAF2FB),
+                    iconColor: const Color(0xFF1E5F8A),
+                    title: 'اقرأ وصحّح تلاوتك',
+                    subtitle: 'تسميع بالتعرف الصوتي مع تنبيه فوري للأخطاء',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SurahListScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  const _SectionLabel('الاختبارات'),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.shuffle_rounded,
+                          label: 'شامل',
+                          hint: '20 سؤالاً',
+                          filled: true,
+                          onTap: () => onStart(all, 'اختبار شامل', 20),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.event_repeat_rounded,
+                          label: 'اليوم',
+                          hint: due.isEmpty ? 'لا شيء' : '${due.length}',
+                          enabled: due.isNotEmpty,
+                          onTap: due.isEmpty
+                              ? null
+                              : () => onStart(due, 'مراجعة اليوم', due.length),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _QuickAction(
+                          icon: Icons.history_rounded,
+                          label: 'أخطائي',
+                          hint: wrong.isEmpty ? '0' : '${wrong.length}',
+                          enabled: wrong.isNotEmpty,
+                          onTap: wrong.isEmpty
+                              ? null
+                              : () => onStart(wrong, 'مراجعة أخطائي', wrong.length),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  const _SectionLabel('أقسام الأسئلة'),
+                  const SizedBox(height: 10),
+                  for (final c in QuizCategory.values) ...[
+                    _CategoryCard(
+                      category: c,
+                      questionCount: QuestionRepository.countInCategory(c),
+                      onTap: () => onChooseCount(c.title, QuestionRepository.byCategory(c)),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ],
-              ],
-            );
-          },
-        ),
-        if (online == false)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              'أنت في وضع عدم الاتصال — البنك المحلي يعمل بالكامل.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
-            ),
+              );
+            },
           ),
-      ]),
+          if (online == false)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'أنت في وضع عدم الاتصال — البنك المحلي يعمل بالكامل.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, fontSize: 12.5, height: 1.5),
+              ),
+            ),
+        ]),
+      ),
     );
   }
 }
@@ -664,8 +628,8 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = StorageService.instance;
-    final answered = store.answeredCountInCategory(category);
-    final acc = store.accuracyInCategory(category);
+    final answered = store.answered(category);
+    final acc = store.accuracy(category);
 
     return Material(
       color: Theme.of(context).cardColor,
