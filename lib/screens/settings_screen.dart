@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/ayah_text_service.dart';
 import '../services/connectivity_service.dart';
 import '../services/mushaf_service.dart';
 import '../services/question_repository.dart';
@@ -28,7 +29,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final store = StorageService.instance;
     _urlController = TextEditingController(text: store.remoteUrl);
-    _reciter = reciters.containsKey(store.reciter) ? store.reciter : StorageService.defaultReciter;
+    _reciter =
+        reciters.containsKey(store.reciter) ? store.reciter : StorageService.defaultReciter;
     _onDevice = store.onDeviceSpeech;
     _refreshSize();
   }
@@ -99,6 +101,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _busy = false;
       _progress = null;
       _status = 'تم حفظ نص $n سورة محلياً';
+    });
+  }
+
+  Future<void> _downloadTexts() async {
+    if (_busy || !await _requireOnline()) return;
+    setState(() {
+      _busy = true;
+      _progress = 0;
+      _status = 'جارٍ حفظ التفسير والترجمة...';
+    });
+    final n = await AyahTextService.downloadAll(
+      onProgress: (done, total) {
+        if (mounted) setState(() => _progress = total == 0 ? 1 : done / total);
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _progress = null;
+      _status = 'تم تجهيز التفسير والترجمة لـ $n سورة';
     });
   }
 
@@ -243,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.mic_rounded,
-            title: 'التعرف على الكلام',
+            title: 'التعرف والمحتوى دون اتصال',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -256,7 +278,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           await StorageService.instance.setOnDeviceSpeech(v);
                           setState(() => _onDevice = v);
                         },
-                  title: const Text('التعرف على الجهاز', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: const Text('التعرف على الجهاز',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: const Text(
                     'يعمل دون إنترنت إن كانت حزمة العربية محمّلة على الجهاز',
                     style: TextStyle(height: 1.4, fontSize: 12.5),
@@ -267,6 +290,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: _busy ? null : _downloadSurahs,
                   icon: const Icon(Icons.menu_book_rounded),
                   label: const Text('حفظ نص المصحف كاملاً'),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.tonalIcon(
+                  onPressed: _busy ? null : _downloadTexts,
+                  icon: const Icon(Icons.translate_rounded),
+                  label: const Text('حفظ التفسير والترجمة دون اتصال'),
                 ),
               ],
             ),
