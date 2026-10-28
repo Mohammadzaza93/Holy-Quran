@@ -4,7 +4,8 @@
     <application
         android:label="إتقان"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/ic_launcher_legacy"
+        android:roundIcon="@drawable/ic_launcher_legacy">
         <activity
             android:name=".MainActivity"
             android:exported="true"
