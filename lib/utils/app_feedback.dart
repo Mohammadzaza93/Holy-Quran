@@ -1,8 +1,7 @@
-import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 
-/// رسائل منبثقة سريعة.
+/// رسائل منبثقة سريعة (BotToast).
 void appToast(String message, {bool success = false}) {
   BotToast.showText(
     text: message,
@@ -14,28 +13,32 @@ void appToast(String message, {bool success = false}) {
   );
 }
 
-/// حوار تأكيد أنيق.
+/// حوار تأكيد بـ Material (بدون awesome_dialog).
 Future<bool> appConfirm(
   BuildContext context, {
   required String title,
   required String body,
   String okText = 'تأكيد',
   String cancelText = 'إلغاء',
-  DialogType type = DialogType.question,
 }) async {
-  var accepted = false;
-  await AwesomeDialog(
+  final result = await showDialog<bool>(
     context: context,
-    dialogType: type,
-    animType: AnimType.scale,
-    title: title,
-    desc: body,
-    btnCancelText: cancelText,
-    btnOkText: okText,
-    btnCancelOnPress: () {},
-    btnOkOnPress: () => accepted = true,
-  ).show();
-  return accepted;
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: Text(body, style: const TextStyle(height: 1.6)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(cancelText),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(okText),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
 }
 
 /// حوار نجاح.
@@ -44,13 +47,18 @@ Future<void> appSuccess(
   required String title,
   String? body,
 }) async {
-  await AwesomeDialog(
+  await showDialog<void>(
     context: context,
-    dialogType: DialogType.success,
-    animType: AnimType.bottomSlide,
-    title: title,
-    desc: body,
-    btnOkText: 'حسناً',
-    btnOkOnPress: () {},
-  ).show();
+    builder: (ctx) => AlertDialog(
+      icon: const Icon(Icons.check_circle_rounded, color: Color(0xFF0B6E4F), size: 40),
+      title: Text(title),
+      content: body == null ? null : Text(body, style: const TextStyle(height: 1.6)),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('حسناً'),
+        ),
+      ],
+    ),
+  );
 }
