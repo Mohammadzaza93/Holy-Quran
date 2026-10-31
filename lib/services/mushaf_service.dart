@@ -22,7 +22,20 @@ class SurahData {
   final List<AyahData> ayat;
 }
 
-/// تحميل نص السور وحفظه محلياً.
+/// نتيجة بحث في نص الآيات المحفوظة محلياً.
+class AyahSearchHit {
+  const AyahSearchHit({
+    required this.surah,
+    required this.ayah,
+    required this.text,
+  });
+
+  final int surah;
+  final int ayah;
+  final String text;
+}
+
+/// تحميل نص السور وحفظه محلياً + بحث بالكلمات.
 class MushafService {
   static const _api = 'https://api.alquran.cloud/v1/surah';
   static const _basmala = 'بسم الله الرحمن الرحيم';
@@ -34,7 +47,8 @@ class MushafService {
     return d;
   }
 
-  static Future<File> _file(int surah) async => File('${(await _dir()).path}/$surah.json');
+  static Future<File> _file(int surah) async =>
+      File('${(await _dir()).path}/$surah.json');
 
   static Future<Set<int>> cachedSurahs() async {
     try {
@@ -62,7 +76,8 @@ class MushafService {
     final remote = await _fetch(number);
     if (remote == null) return null;
     try {
-      await f.writeAsString(jsonEncode({'a': remote.ayat.map((a) => a.toJson()).toList()}));
+      await f.writeAsString(
+          jsonEncode({'a': remote.ayat.map((a) => a.toJson()).toList()}));
     } catch (_) {}
     return remote;
   }
@@ -83,7 +98,41 @@ class MushafService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>?> _fetchEdition(int number, String edition) async {
+  /// بحث في الآيات المحفوظة على الجهاز (اسم/رقم السورة يُعالَج في الواجهة).
+  /// [query] يُطبَّع عبر [ArabicText.normalize] (إزالة التشكيل وتوحيد الحروف).
+  static Future<List<AyahSearchHit>> searchAyat(
+    String query, {
+    int limit = 40,
+  }) async {
+    final needle = ArabicText.normalize(query);
+    if (needle.length < 2) return const [];
+
+    final cached = await cachedSurahs();
+    if (cached.isEmpty) return const [];
+
+    final hits = <AyahSearchHit>[];
+    final sorted = cached.toList()..sort();
+
+    for (final n in sorted) {
+      if (hits.length >= limit) break;
+      final f = await _file(n);
+      if (!await f.exists()) continue;
+      final surah = _parseLocal(n, await f.readAsString());
+      if (surah == null) continue;
+
+      for (final a in surah.ayat) {
+        if (hits.length >= limit) break;
+        final hay = ArabicText.normalize(a.simple.isNotEmpty ? a.simple : a.text);
+        if (hay.contains(needle)) {
+          hits.add(AyahSearchHit(surah: n, ayah: a.number, text: a.text));
+        }
+      }
+    }
+    return hits;
+  }
+
+  static Future<List<Map<String, dynamic>>?> _fetchEdition(
+      int number, String edition) async {
     try {
       final r = await http
           .get(Uri.parse('$_api/$number/$edition'))
@@ -129,10 +178,12 @@ class MushafService {
     return SurahData(number: number, ayat: ayat);
   }
 
-  static Future<int> downloadAllSurahs({void Function(int done, int total)? onProgress}) =>
+  static Future<int> downloadAllSurahs(
+          {void Function(int done, int total)? onProgress}) =>
       downloadAll(onProgress: onProgress);
 
-  static Future<int> downloadAll({void Function(int done, int total)? onProgress}) async {
+  static Future<int> downloadAll(
+      {void Function(int done, int total)? onProgress}) async {
     var ok = 0;
     for (var n = 1; n <= 114; n++) {
       final s = await getSurah(n);
