@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/lesson_quizzes.dart';
 import '../data/lessons.dart';
 import '../models/lesson.dart';
 import '../services/storage_service.dart';
+import 'quiz_screen.dart';
 
-/// قائمة حلقات شرح التجويد المصور (يوتيوب — الشيخ أيمن سويد).
+/// قائمة حلقات شرح التجويد المصور + اختبار لكل حلقة.
 class LessonsListScreen extends StatefulWidget {
   const LessonsListScreen({super.key});
 
@@ -22,9 +24,30 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر فتح يوتيوب. تأكد من تثبيت التطبيق أو المتصفح.')),
+        const SnackBar(
+          content: Text('تعذّر فتح يوتيوب. تأكد من تثبيت التطبيق أو المتصفح.'),
+        ),
       );
     }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _startQuiz(Lesson lesson) async {
+    final questions = questionsForLesson(lesson.id);
+    if (questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لا يوجد اختبار لهذه الحلقة بعد.')),
+      );
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => QuizScreen(
+          title: 'اختبار · حلقة ${lesson.order}',
+          questions: questions,
+        ),
+      ),
+    );
     if (mounted) setState(() {});
   }
 
@@ -63,7 +86,7 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'شرح كتاب التجويد المصور',
+                    'منهج مقترح',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -71,14 +94,16 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
                     Lesson.attribution,
                     style: const TextStyle(height: 1.6),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   const Text(
-                    'اضغط أي حلقة لفتحها مباشرة على يوتيوب. يُفضَّل المشاهدة بالترتيب.',
-                    style: TextStyle(height: 1.5, fontSize: 13),
+                    '1) شاهد الحلقة على يوتيوب\n'
+                    '2) ارجع للتطبيق وابدأ اختبار الحلقة\n'
+                    '3) راجع الشرح عند الخطأ ثم انتقل للتالية',
+                    style: TextStyle(height: 1.65, fontSize: 13.5),
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'تقدمك: $read من $total حلقة',
+                    'تقدم المشاهدة: $read من $total',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
@@ -91,7 +116,7 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
                   OutlinedButton.icon(
                     onPressed: _openPlaylist,
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('فتح قائمة التشغيل كاملة'),
+                    label: const Text('قائمة التشغيل كاملة'),
                   ),
                 ],
               ),
@@ -99,10 +124,12 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
           ),
           const SizedBox(height: 16),
           for (final lesson in tajweedLessons)
-            _LessonTile(
+            _LessonCard(
               lesson: lesson,
               isRead: store.isLessonRead(lesson.id),
-              onTap: () => _openLesson(lesson),
+              quizCount: lessonQuizCount(lesson.id),
+              onWatch: () => _openLesson(lesson),
+              onQuiz: () => _startQuiz(lesson),
             ),
         ],
       ),
@@ -110,53 +137,98 @@ class _LessonsListScreenState extends State<LessonsListScreen> {
   }
 }
 
-class _LessonTile extends StatelessWidget {
-  const _LessonTile({
+class _LessonCard extends StatelessWidget {
+  const _LessonCard({
     required this.lesson,
     required this.isRead,
-    required this.onTap,
+    required this.quizCount,
+    required this.onWatch,
+    required this.onQuiz,
   });
 
   final Lesson lesson;
   final bool isRead;
-  final VoidCallback onTap;
+  final int quizCount;
+  final VoidCallback onWatch;
+  final VoidCallback onQuiz;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: isRead ? scheme.primary : scheme.primaryContainer,
-          child: isRead
-              ? Icon(Icons.check, color: scheme.onPrimary, size: 22)
-              : Text(
-                  '${lesson.order}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.primary,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor:
+                      isRead ? scheme.primary : scheme.primaryContainer,
+                  child: isRead
+                      ? Icon(Icons.check, color: scheme.onPrimary, size: 22)
+                      : Text(
+                          '${lesson.order}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: scheme.primary,
+                          ),
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lesson.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15.5,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        lesson.summary,
+                        style: TextStyle(
+                          height: 1.4,
+                          fontSize: 12.5,
+                          color: scheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-        ),
-        title: Text(
-          lesson.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: isRead ? scheme.onSurface.withValues(alpha: 0.75) : null,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Text(lesson.summary, style: const TextStyle(height: 1.4)),
-        ),
-        trailing: Icon(
-          Icons.play_circle_outline,
-          color: scheme.primary,
-          size: 28,
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onWatch,
+                    icon: const Icon(Icons.play_circle_outline, size: 20),
+                    label: const Text('مشاهدة'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: quizCount == 0 ? null : onQuiz,
+                    icon: const Icon(Icons.quiz_outlined, size: 20),
+                    label: Text(
+                      quizCount == 0 ? 'قريباً' : 'اختبار ($quizCount)',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
